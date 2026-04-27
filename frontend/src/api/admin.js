@@ -1,0 +1,15 @@
+import request from './request'
+
+export const getStatistics = () => request.get('/admin/statistics')
+export const getUsers = (params) => request.get('/admin/users', { params })
+export const createUser = (data) => request.post('/admin/users', data)
+export const updateUser = (id, data) => request.put(`/admin/users/${id}`, data)
+export const deleteUser = (id) => request.delete(`/admin/users/${id}`)
+export const resetPassword = (id) => request.post(`/admin/users/${id}/reset-password`)
+export const getLogs = (params) => request.get('/admin/logs', { params })
+export const getFeedbacks = (params) => request.get('/admin/feedbacks', { params })
+export const replyFeedback = (id, data) => request.put(`/admin/feedbacks/${id}`, data)
+export const getNotices = () => request.get('/admin/notices')
+export const createNotice = (data) => request.post('/admin/notices', data)
+export const deleteNotice = (id) => request.delete(`/admin/notices/${id}`)
+export const getCollegesMajors = () => request.get('/admin/colleges-majors')

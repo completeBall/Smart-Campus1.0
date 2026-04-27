@@ -1,0 +1,41 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+**/node_modules/
+
+# Build output
+**/dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Uploads (runtime files)
+smart-campus/backend/uploads/*
+!smart-campus/backend/uploads/default-avatar.png
+
+# Lock files (optional - uncomment if you don't want to commit them)
+# **/package-lock.json
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
