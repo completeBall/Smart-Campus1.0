@@ -312,20 +312,13 @@ const handleSubmit = async () => {
 }
 
 const handleReset = async () => {
-  // 重置为默认值：清空头像、姓名等可编辑字段（保留班级/学院/专业）
-  form.value = {
-    ...form.value,
-    avatar: '',
-    name: form.value.username || '',
-    phone: '',
-    email: '',
-    signature: '',
-    background_image: '',
-    featured_photos: []
+  // 重置为从服务器获取的原始数据
+  if (originalData.value) {
+    form.value = { ...originalData.value }
   }
   // 清除表单校验状态
   formRef.value?.clearValidate()
-  ElMessage.success('已重置为默认值,请保存以生效')
+  ElMessage.success('已重置为原始数据')
 }
 
 onMounted(fetchProfile)

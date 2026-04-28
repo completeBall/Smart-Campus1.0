@@ -15,7 +15,12 @@ router.get('/statistics', async (req, res) => {
       [studentId]
     );
     const [[{ count: submitCount }]] = await pool.execute('SELECT COUNT(*) as count FROM task_submissions WHERE student_id = ?', [studentId]);
-    const [[{ count: unreadCount }]] = await pool.execute('SELECT COUNT(*) as count FROM notices WHERE created_at > (SELECT last_login FROM users WHERE id = ?)', [studentId]);
+    const [[{ count: unreadCount }]] = await pool.execute(
+      `SELECT COUNT(*) as count FROM notices
+       WHERE (type = 'all' OR type = 'student')
+         AND created_at > IFNULL((SELECT last_login FROM users WHERE id = ?), '1970-01-01')`,
+      [studentId]
+    );
     res.json({ code: 200, data: { taskCount, submitCount, unreadCount } });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
@@ -414,16 +419,20 @@ router.get('/notices', async (req, res) => {
 
 /* ==================== 请假功能 ==================== */
 
-// 申请请假
+// 申请请假/晚归/不归
 router.post('/leave', async (req, res) => {
   const studentId = req.user.id;
-  const { start_date, end_date, type, reason } = req.body;
+  const { start_date, end_date, type, reason, parent_consent_url, late_time } = req.body;
+  // 晚归和不归必须上传家长知情书
+  if ((type === 'late_return' || type === 'absence') && !parent_consent_url) {
+    return res.json({ code: 400, message: '晚归/不归申请必须上传家长知情书' });
+  }
   try {
     await pool.execute(
-      'INSERT INTO leave_requests (student_id, start_date, end_date, type, reason, status, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
-      [studentId, start_date, end_date, type, reason]
+      'INSERT INTO leave_requests (student_id, start_date, end_date, type, reason, parent_consent_url, late_time, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())',
+      [studentId, start_date, end_date || start_date, type, reason, parent_consent_url || null, late_time || null]
     );
-    res.json({ code: 200, message: '请假申请已提交，等待审批' });
+    res.json({ code: 200, message: '申请已提交，等待审批' });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
   }
@@ -866,6 +875,81 @@ router.get('/colleges', async (req, res) => {
 });
 
 /* ==================== 每日背单词（每天3次机会） ==================== */
+
+// 自动建表并修复错误约束（每天应允许多条记录）
+(async () => {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS word_bank (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        word VARCHAR(100) NOT NULL,
+        meaning VARCHAR(255) NOT NULL,
+        options JSON,
+        UNIQUE KEY uk_word (word)
+      )
+    `);
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS word_study_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        study_date DATE NOT NULL,
+        total_words INT DEFAULT 0,
+        correct_count INT DEFAULT 0,
+        accuracy DECIMAL(5,2) DEFAULT 0,
+        score_added TINYINT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_student_date (student_id, study_date)
+      )
+    `);
+    // 若存在旧版错误的唯一约束则删除（业务允许每天3次）
+    const [indexes] = await pool.execute(`
+      SELECT 1 FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'word_study_records'
+        AND INDEX_NAME = 'uk_student_date'
+    `);
+    if (indexes.length > 0) {
+      await pool.execute('ALTER TABLE word_study_records DROP INDEX uk_student_date');
+      console.log('[DB Fix] 已删除 word_study_records 的错误唯一约束 uk_student_date');
+    }
+
+    // 修复 activity_score_records：删除错误的唯一约束，并补 source_type 字段
+    try {
+      await pool.execute(`
+        ALTER TABLE activity_score_records
+        ADD COLUMN IF NOT EXISTS source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分'
+      `);
+    } catch (e) { /* 字段已存在则忽略 */ }
+
+    const [scoreIndexes] = await pool.execute(`
+      SELECT 1 FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'activity_score_records'
+        AND INDEX_NAME = 'uk_activity_student_score'
+    `);
+    if (scoreIndexes.length > 0) {
+      await pool.execute('ALTER TABLE activity_score_records DROP INDEX uk_activity_student_score');
+      console.log('[DB Fix] 已删除 activity_score_records 的错误唯一约束 uk_activity_student_score');
+    }
+
+    // 修复 leave_requests：补全晚归/不归相关字段
+    try {
+      await pool.execute(`
+        ALTER TABLE leave_requests
+        ADD COLUMN IF NOT EXISTS parent_consent_url VARCHAR(255) DEFAULT NULL COMMENT '家长知情书附件URL',
+        ADD COLUMN IF NOT EXISTS late_time TIME DEFAULT NULL COMMENT '晚归预计时间'
+      `);
+    } catch (e) { /* 字段已存在则忽略 */ }
+    try {
+      await pool.execute(`
+        ALTER TABLE leave_requests
+        MODIFY COLUMN type ENUM('sick','personal','other','late_return','absence') DEFAULT 'personal'
+      `);
+    } catch (e) { /* 枚举已扩展或失败则忽略 */ }
+  } catch (e) {
+    console.error('[DB Fix] 单词表初始化失败:', e.message);
+  }
+})();
 
 // 获取今日单词和已尝试记录
 router.get('/daily-words', async (req, res) => {

@@ -20,6 +20,10 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => {
+    // blob / arraybuffer 响应直接返回，不做 JSON 校验
+    if (response.config.responseType === 'blob' || response.config.responseType === 'arraybuffer') {
+      return response.data
+    }
     const res = response.data
     if (res.code !== 200) {
       // 401/403 静默处理，只跳转不弹窗

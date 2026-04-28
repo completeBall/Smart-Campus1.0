@@ -472,12 +472,21 @@ const getHoliday = (data) => {
   return HOLIDAYS_LUNAR[dateStr] || HOLIDAYS_FIXED[md] || null
 }
 
+const lastReadNoticeKey = computed(() => `last_read_notice_${userStore.userInfo.id || 'anon'}`)
+
+const getUnreadNoticeCount = () => {
+  if (!notices.value.length) return 0
+  const lastRead = localStorage.getItem(lastReadNoticeKey.value)
+  if (!lastRead) return notices.value.length
+  const readTime = new Date(lastRead).getTime()
+  return notices.value.filter(n => new Date(n.created_at).getTime() > readTime).length
+}
+
 const loadData = async () => {
   try {
     const { data } = await getStudentStatistics()
     stats.value[0].value = data.taskCount
     stats.value[1].value = data.submitCount
-    stats.value[2].value = data.unreadCount
 
     const { data: taskData } = await getStudentTasks()
     pendingTasks.value = taskData.filter(t => t.submit_status === null).slice(0, 3)
@@ -488,6 +497,8 @@ const loadData = async () => {
 
     const { data: noticeData } = await getStudentNotices()
     notices.value = noticeData
+    // 前端自己计算未读通知数（基于上次查看时间）
+    stats.value[2].value = getUnreadNoticeCount()
 
     // 构建日历事件
     const events = []
@@ -540,6 +551,9 @@ const handleStatClick = (title) => {
 const noticeDialogVisible = ref(false)
 const openNoticeDialog = () => {
   noticeDialogVisible.value = true
+  // 标记通知已读
+  localStorage.setItem(lastReadNoticeKey.value, new Date().toISOString())
+  stats.value[2].value = 0
 }
 
 // ===== 学习备忘录 =====
@@ -618,6 +632,12 @@ const formatMemoTime = (ts) => {
   return d.format('MM-DD HH:mm')
 }
 
+const handleVisibilityChange = () => {
+  if (!document.hidden) {
+    loadData()
+  }
+}
+
 onMounted(() => {
   loadData()
   loadStatus()
@@ -629,10 +649,13 @@ onMounted(() => {
       loadStatus()
     }
   }, 1000)
+  // 页面重新可见时刷新数据（切换标签页/后台回到前台）
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onBeforeUnmount(() => {
   if (nowTimer) clearInterval(nowTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

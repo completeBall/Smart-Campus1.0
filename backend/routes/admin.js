@@ -3,9 +3,13 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+const xlsx = require('xlsx');
+const multer = require('multer');
 
 router.use(authMiddleware);
 router.use(roleMiddleware(['admin']));
+
+const uploadExcel = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 // 获取统计信息
 router.get('/statistics', async (req, res) => {
@@ -69,6 +73,9 @@ router.get('/users', async (req, res) => {
   }
 });
 
+const DEFAULT_BG_IMAGE = '/uploads/defaults/default-bg.jpg';
+const DEFAULT_FEATURED_PHOTOS = JSON.stringify([DEFAULT_BG_IMAGE]);
+
 router.post('/users', async (req, res) => {
   const { username, name, role, password = '123456', class_name, phone, email, college_id, major_id } = req.body;
   try {
@@ -79,8 +86,8 @@ router.post('/users', async (req, res) => {
     if (existing) return res.json({ code: 400, message: '用户名已存在' });
     const hash = await bcrypt.hash(password || '123456', 10);
     await pool.execute(
-      `INSERT INTO users (username, password, name, role, class_name, phone, email, college_id, major_id, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())`,
+      `INSERT INTO users (username, password, name, role, class_name, phone, email, college_id, major_id, status, background_image, featured_photos, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())`,
       [
         username,
         hash,
@@ -90,10 +97,124 @@ router.post('/users', async (req, res) => {
         phone || null,
         email || null,
         college_id || null,
-        major_id || null
+        major_id || null,
+        DEFAULT_BG_IMAGE,
+        DEFAULT_FEATURED_PHOTOS
       ]
     );
     res.json({ code: 200, message: '创建成功,初始密码为 123456' });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 下载用户导入模板（必须在 /users/:id 之前注册，避免被动态路由截获）
+router.get('/users/template', async (req, res) => {
+  try {
+    const wb = xlsx.utils.book_new();
+    const data = [
+      ['账号', '姓名', '角色(admin/teacher/student)', '班级', '手机号', '邮箱', '学院ID', '专业ID'],
+      ['zhangsan', '张三', 'student', '软件技术一班', '13800138000', 'zhangsan@example.com', 1, 1],
+      ['', '', '', '', '', '', '', '']
+    ];
+    const ws = xlsx.utils.aoa_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 15 }, { wch: 10 }, { wch: 28 }, { wch: 15 },
+      { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 10 }
+    ];
+    xlsx.utils.book_append_sheet(wb, ws, '用户导入模板');
+    const buf = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="用户导入模板.xlsx"');
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 批量导入用户
+router.post('/users/import', uploadExcel.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ code: 400, message: '请上传Excel文件' });
+    }
+    const wb = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = xlsx.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    if (rows.length < 2) {
+      return res.json({ code: 400, message: 'Excel文件为空或缺少数据行' });
+    }
+
+    const headers = rows[0].map(h => String(h).trim());
+    const headerMap = {
+      '账号': 'username', '姓名': 'name', '角色': 'role',
+      '班级': 'class_name', '手机号': 'phone', '邮箱': 'email',
+      '学院ID': 'college_id', '专业ID': 'major_id'
+    };
+    const colIndex = {};
+    headers.forEach((h, i) => {
+      if (headerMap[h]) colIndex[headerMap[h]] = i;
+    });
+
+    if (colIndex.username === undefined || colIndex.name === undefined || colIndex.role === undefined) {
+      return res.json({ code: 400, message: 'Excel缺少必填列：账号、姓名、角色' });
+    }
+
+    const success = [];
+    const failed = [];
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const username = String(row[colIndex.username] || '').trim();
+        const name = String(row[colIndex.name] || '').trim();
+        const role = String(row[colIndex.role] || '').trim();
+
+        if (!username && !name && !role) continue;
+        if (!username || !name || !role) {
+          failed.push({ row: i + 1, reason: '账号、姓名或角色为空' });
+          continue;
+        }
+        if (!['admin', 'teacher', 'student'].includes(role)) {
+          failed.push({ row: i + 1, reason: `角色"${role}"不合法，必须是admin/teacher/student之一` });
+          continue;
+        }
+        const [[existing]] = await conn.execute('SELECT id FROM users WHERE username = ?', [username]);
+        if (existing) {
+          failed.push({ row: i + 1, reason: `账号"${username}"已存在` });
+          continue;
+        }
+        const hash = await bcrypt.hash('123456', 10);
+        const class_name = colIndex.class_name !== undefined ? (String(row[colIndex.class_name] || '').trim() || null) : null;
+        const phone = colIndex.phone !== undefined ? (String(row[colIndex.phone] || '').trim() || null) : null;
+        const email = colIndex.email !== undefined ? (String(row[colIndex.email] || '').trim() || null) : null;
+        const college_id = colIndex.college_id !== undefined ? (parseInt(row[colIndex.college_id]) || null) : null;
+        const major_id = colIndex.major_id !== undefined ? (parseInt(row[colIndex.major_id]) || null) : null;
+
+        await conn.execute(
+          `INSERT INTO users (username, password, name, role, class_name, phone, email, college_id, major_id, status, background_image, featured_photos, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())`,
+          [username, hash, name, role, class_name, phone, email, college_id, major_id, DEFAULT_BG_IMAGE, DEFAULT_FEATURED_PHOTOS]
+        );
+        success.push(username);
+      }
+
+      await conn.commit();
+      res.json({
+        code: 200,
+        message: `导入完成，成功${success.length}条，失败${failed.length}条`,
+        data: { successCount: success.length, failedCount: failed.length, failed }
+      });
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
   }

@@ -394,216 +394,379 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .forum-page {
+  /* ========== 主卡片 ========== */
   .main-card {
-    border-radius: 12px;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    overflow: hidden;
+
     .header-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 4px 0;
+
       .search-bar {
         display: flex;
         gap: 10px;
+        align-items: center;
+
+        .el-input {
+          :deep(.el-input__wrapper) {
+            border-radius: 14px;
+            box-shadow: 0 0 0 1px #e4e7ed inset;
+            transition: all 0.3s ease;
+            padding: 0 14px;
+            &:focus-within {
+              box-shadow: 0 0 0 1px #409eff inset, 0 0 0 4px rgba(64,158,255,0.08);
+            }
+          }
+        }
+
+        .el-button {
+          border-radius: 12px;
+          padding: 0 20px;
+          height: 36px;
+          background: linear-gradient(135deg, #409eff 0%, #1677ff 100%);
+          border: none;
+          box-shadow: 0 4px 12px rgba(64, 158, 255, 0.25);
+          transition: all 0.3s ease;
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(64, 158, 255, 0.35);
+          }
+        }
+      }
+
+      .el-button[round] {
+        border-radius: 20px;
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 500;
+        box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
       }
     }
+
     .filter-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 12px;
+      margin: 16px 0 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+
+      :deep(.el-radio-button__inner) {
+        border-radius: 10px !important;
+        border-left: 1px solid #dcdfe6;
+        padding: 6px 16px;
+        font-size: 13px;
+      }
     }
   }
 
+  /* ========== 帖子列表 ========== */
   .post-list {
     .post-item {
       display: flex;
       gap: 14px;
-      padding: 18px 14px;
-      border-radius: 10px;
+      padding: 20px 16px;
+      border-radius: 16px;
       cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 8px;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 10px;
+      background: #fff;
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px 0 0 16px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
       &:hover {
-        background: linear-gradient(90deg, #f5f7ff, #fff);
-        transform: translateX(4px);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+        border-color: #e8ecf4;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+
+        &::before { opacity: 1; }
+        .title-text { color: #409eff; }
+      }
+
+      &:nth-child(even) {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
       }
     }
+
     .post-avatar {
       flex-shrink: 0;
+      .el-avatar {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 2px solid #fff;
+      }
     }
+
     .post-content {
       flex: 1;
       min-width: 0;
+      padding-left: 4px;
+
       .post-title {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         flex-wrap: wrap;
+
         .title-text {
           font-size: 16px;
           font-weight: 600;
-          color: #303133;
+          color: #1a1a2e;
+          transition: color 0.3s ease;
+          letter-spacing: 0.2px;
+        }
+
+        .el-tag {
+          border-radius: 8px;
+          padding: 0 10px;
+          height: 24px;
+          font-weight: 500;
         }
       }
+
       .post-preview {
         font-size: 13px;
-        color: #909399;
-        line-height: 1.6;
-        margin-bottom: 8px;
+        color: #606266;
+        line-height: 1.7;
+        margin-bottom: 10px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+
       .post-thumbs {
         display: flex;
-        gap: 6px;
-        margin-bottom: 8px;
+        gap: 8px;
+        margin-bottom: 10px;
         .thumb {
-          width: 80px;
-          height: 80px;
-          border-radius: 6px;
+          width: 88px;
+          height: 88px;
+          border-radius: 10px;
           overflow: hidden;
           background: #f5f7fa;
+          border: 1px solid #f0f0f0;
+          transition: transform 0.3s ease;
+          &:hover { transform: scale(1.03); }
         }
         .more-thumb {
           display: flex;
           align-items: center;
           justify-content: center;
           color: #fff;
-          background: rgba(0, 0, 0, 0.55);
-          font-size: 16px;
+          background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.7));
+          font-size: 15px;
           font-weight: 600;
+          backdrop-filter: blur(4px);
         }
       }
+
       .post-meta {
         display: flex;
-        gap: 16px;
+        gap: 18px;
         font-size: 12px;
-        color: #909399;
+        color: #a8abb2;
         span {
           display: flex;
           align-items: center;
           gap: 4px;
+          .el-icon { font-size: 13px; }
         }
         .author {
           color: #667eea;
+          font-weight: 500;
+          background: rgba(102, 126, 234, 0.06);
+          padding: 2px 8px;
+          border-radius: 10px;
+        }
+        .time {
+          color: #c0c4cc;
         }
       }
     }
+
     .post-stats {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
       justify-content: center;
-      min-width: 70px;
-      padding-left: 12px;
-      border-left: 1px dashed #ebeef5;
+      min-width: 76px;
+      padding-left: 14px;
+      border-left: 1px dashed #e4e7ed;
+
       .stat-item {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         font-size: 13px;
-        color: #909399;
-        .el-icon {
-          font-size: 14px;
-        }
+        color: #a8abb2;
+        transition: color 0.2s;
+        .el-icon { font-size: 14px; }
       }
+
       .like-stat {
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 12px;
-        transition: all 0.2s;
+        padding: 6px 12px;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+
         &:hover {
-          background: #fdf2f2;
+          background: linear-gradient(135deg, #fdf2f2, #fff0f0);
           color: #f56c6c;
+          transform: scale(1.05);
         }
         &.active {
-          color: #f56c6c;
-          background: #fdf2f2;
-          font-weight: 600;
+          color: #fff;
+          background: linear-gradient(135deg, #f56c6c 0%, #ff7875 100%);
+          box-shadow: 0 4px 12px rgba(245, 108, 108, 0.25);
+          .el-icon { color: #fff; }
+          span { color: #fff; }
         }
       }
     }
   }
 
   .pagination {
-    margin-top: 20px;
+    margin-top: 24px;
     display: flex;
     justify-content: flex-end;
   }
 
+  /* ========== 热度排行 ========== */
   .hot-card {
-    border-radius: 12px;
-    margin-bottom: 16px;
+    border-radius: 20px;
+    border: none;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    overflow: hidden;
+
+    :deep(.el-card__header) {
+      background: linear-gradient(135deg, #fff5f5 0%, #fff0f0 100%);
+      border-bottom: 1px solid #ffe8e8;
+      padding: 14px 20px;
+    }
+
     .hot-header {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-weight: 600;
+      gap: 8px;
+      font-weight: 700;
       font-size: 15px;
+      color: #f56c6c;
+      .el-icon { font-size: 18px; }
     }
+
     .empty-hot {
       text-align: center;
       color: #c0c4cc;
-      padding: 20px 0;
+      padding: 24px 0;
       font-size: 13px;
     }
+
     .hot-list {
+      padding: 4px 0;
       .hot-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 0;
+        gap: 12px;
+        padding: 10px 4px;
         cursor: pointer;
-        border-bottom: 1px dashed #f0f0f0;
+        border-bottom: 1px solid #f5f7fa;
+        transition: all 0.25s ease;
         &:last-child { border-bottom: none; }
-        &:hover .hot-title {
-          color: #667eea;
+        &:hover {
+          background: #f8f9fc;
+          border-radius: 10px;
+          padding-left: 8px;
+          padding-right: 8px;
+          .hot-title { color: #409eff; }
         }
+
         .hot-rank {
-          width: 22px;
-          height: 22px;
-          border-radius: 4px;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #f0f2f5;
-          color: #909399;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 13px;
           flex-shrink: 0;
+          background: #f0f2f5;
+          color: #909399;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
-        .rank-1 { background: #ffefe6; color: #f56c6c; }
-        .rank-2 { background: #fff8e1; color: #e6a23c; }
-        .rank-3 { background: #fff4d6; color: #c8a13e; }
+        .rank-1 {
+          background: linear-gradient(135deg, #ffd700, #ffaa00);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(255, 170, 0, 0.3);
+        }
+        .rank-2 {
+          background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(160, 160, 160, 0.3);
+        }
+        .rank-3 {
+          background: linear-gradient(135deg, #cd7f32, #b87333);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(184, 115, 51, 0.3);
+        }
+
         .hot-info {
           flex: 1;
           min-width: 0;
           .hot-title {
             font-size: 13px;
             color: #303133;
-            line-height: 1.4;
+            line-height: 1.5;
             display: -webkit-box;
             -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
             transition: color 0.2s;
+            font-weight: 500;
           }
           .hot-meta {
             font-size: 11px;
-            color: #909399;
-            margin-top: 3px;
+            color: #c0c4cc;
+            margin-top: 4px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             span {
               display: flex;
               align-items: center;
-              gap: 2px;
+              gap: 3px;
             }
           }
         }
@@ -611,50 +774,82 @@ onMounted(() => {
     }
   }
 
+  /* ========== 论坛公约 ========== */
   .tip-card {
-    border-radius: 12px;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    background: linear-gradient(135deg, #f0f5ff 0%, #f5f0ff 100%);
+    overflow: hidden;
+
+    :deep(.el-card__body) {
+      padding: 20px;
+    }
+
     .tip-title {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-weight: 600;
-      color: #667eea;
-      margin-bottom: 10px;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #5b8ff9;
+      margin-bottom: 14px;
+      .el-icon { font-size: 18px; }
     }
+
     .tip-list {
       margin: 0;
-      padding-left: 16px;
+      padding: 0;
       color: #606266;
       font-size: 13px;
-      line-height: 2;
+      line-height: 1.8;
       li {
-        list-style: disc;
+        list-style: none;
+        padding: 6px 0 6px 24px;
+        position: relative;
+        transition: all 0.2s;
+        &:hover {
+          color: #409eff;
+          padding-left: 28px;
+        }
+        &::before {
+          content: '';
+          position: absolute;
+          left: 8px;
+          top: 13px;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+        }
       }
     }
   }
 
   .form-tip {
-    color: #909399;
+    color: #a8abb2;
     font-size: 12px;
-    margin-top: 4px;
+    margin-top: 6px;
   }
+
   .attachment-list {
     margin-top: 8px;
     .attachment-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 10px;
-      background: #f5f7fa;
-      border-radius: 6px;
-      margin-bottom: 4px;
+      padding: 8px 12px;
+      background: #f8f9fc;
+      border-radius: 10px;
+      margin-bottom: 6px;
       font-size: 13px;
+      border: 1px solid #eef0f5;
       .att-name {
         flex: 1;
         color: #303133;
       }
       .att-size {
-        color: #909399;
+        color: #a8abb2;
         font-size: 12px;
       }
     }

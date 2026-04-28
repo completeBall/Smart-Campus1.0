@@ -4,7 +4,7 @@
       <el-aside width="220px" class="sidebar">
         <div class="logo">
           <el-icon size="28"><School /></el-icon>
-          <span>智慧校园</span>
+          <span>智慧校园1.0</span>
         </div>
         <el-menu
           :default-active="activeMenu"

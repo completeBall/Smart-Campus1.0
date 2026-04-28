@@ -194,27 +194,68 @@ loadData()
     justify-content: space-between;
     align-items: center;
   }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+  }
   .task-cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 20px;
   }
   .task-card {
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, #409eff 0%, #1677ff 100%);
+      border-radius: 16px 0 0 16px;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(64, 158, 255, 0.15);
+    }
+
     .task-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      padding-left: 8px;
       h4 {
         margin: 0;
-        color: #333;
+        color: #1a1a2e;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      .el-tag {
+        border-radius: 20px;
+        padding: 0 14px;
+        height: 28px;
+        font-weight: 500;
+        font-size: 12px;
       }
     }
     .task-content {
-      color: #666;
+      color: #606266;
       font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 16px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+      padding-left: 8px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -224,39 +265,166 @@ loadData()
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding-left: 8px;
       .task-meta {
         display: flex;
         gap: 16px;
         font-size: 13px;
-        color: #999;
+        color: #909399;
         span {
           display: flex;
           align-items: center;
           gap: 4px;
         }
+        .el-icon {
+          font-size: 14px;
+          color: #c0c4cc;
+        }
+      }
+      .task-actions {
+        .el-button {
+          border-radius: 20px;
+          padding: 8px 20px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          &:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+          }
+        }
       }
     }
     .score-info {
-      .pass { color: #67c23a; font-weight: bold; }
-      .fail { color: #f56c6c; font-weight: bold; }
-      .reviewing { color: #909399; font-size: 13px; }
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: #f4f4f5;
+      .pass { color: #67c23a; font-weight: 700; font-size: 14px; }
+      .fail { color: #f56c6c; font-weight: 700; font-size: 14px; }
+      .reviewing { color: #909399; font-size: 13px; font-weight: 500; }
     }
   }
-  .task-detail {
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #eee;
-    h4 { margin: 0 0 8px; }
-    p { color: #666; margin: 0; }
+
+  // 状态色条
+  .task-card:has(.el-tag--warning)::before {
+    background: linear-gradient(180deg, #e6a23c 0%, #d48a1a 100%);
   }
+  .task-card:has(.el-tag--success)::before {
+    background: linear-gradient(180deg, #67c23a 0%, #529b22 100%);
+  }
+  .task-card:has(.el-tag--danger)::before {
+    background: linear-gradient(180deg, #f56c6c 0%, #d9363e 100%);
+  }
+  .task-card:has(.el-tag--info)::before {
+    background: linear-gradient(180deg, #909399 0%, #6b6d71 100%);
+  }
+
+  // 有附件的标识
+  .file-tag {
+    color: #409eff;
+    font-size: 12px;
+    background: rgba(64, 158, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  // 对话框样式
+  :deep(.el-dialog) {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12);
+
+    .el-dialog__header {
+      background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+      padding: 20px 24px;
+      margin: 0;
+      border-bottom: 1px solid #e4e7ed;
+
+      .el-dialog__title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a2e;
+      }
+    }
+
+    .el-dialog__body {
+      padding: 24px;
+    }
+
+    .el-dialog__footer {
+      padding: 16px 24px 24px;
+      border-top: 1px solid #f0f0f0;
+
+      .el-button {
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+      .el-button--primary {
+        background: linear-gradient(135deg, #409eff 0%, #1677ff 100%);
+        border: none;
+        box-shadow: 0 4px 14px rgba(64, 158, 255, 0.35);
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(64, 158, 255, 0.45);
+        }
+      }
+    }
+  }
+
+  .task-detail {
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #f0f5ff 0%, #f5f7fa 100%);
+    border-radius: 14px;
+    border: 1px solid #e8ecf4;
+    h4 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    p {
+      color: #606266;
+      margin: 0;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+  }
+
   .upload-tip {
     font-size: 12px;
-    color: #999;
-    margin-top: 4px;
+    color: #a8abb2;
+    margin-top: 6px;
+    padding-left: 4px;
   }
-  .file-tag {
-    color: #667eea;
-    font-size: 12px;
+
+  :deep(.el-form-item__label) {
+    font-weight: 500;
+    color: #606266;
+  }
+
+  :deep(.el-textarea__inner) {
+    border-radius: 12px;
+    padding: 12px 16px;
+    line-height: 1.7;
+    transition: all 0.3s ease;
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+    }
+  }
+
+  :deep(.el-upload .el-button) {
+    border-radius: 10px;
+    background: linear-gradient(135deg, #409eff 0%, #1677ff 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.25);
+    transition: all 0.3s ease;
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(64, 158, 255, 0.35);
+    }
   }
 }
 </style>

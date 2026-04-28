@@ -314,6 +314,23 @@ async function migrate() {
     console.log('source_type already exists in activity_score_records');
   }
 
+  // 11. 为现有用户设置默认背景图和精选照片
+  try {
+    const defaultBgUrl = '/uploads/defaults/default-bg.jpg';
+    const defaultFeatured = JSON.stringify([defaultBgUrl]);
+    const [fixBg] = await conn.execute(
+      `UPDATE users SET background_image = ?, featured_photos = ? WHERE background_image IS NULL OR background_image = ''`,
+      [defaultBgUrl, defaultFeatured]
+    );
+    if (fixBg.affectedRows > 0) {
+      console.log(`Updated ${fixBg.affectedRows} users with default background and featured photos`);
+    } else {
+      console.log('All users already have background_image set');
+    }
+  } catch (e) {
+    console.log('Error setting default background/photos:', e.message);
+  }
+
   await conn.end();
   console.log('Migration completed successfully!');
 }

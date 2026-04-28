@@ -24,8 +24,9 @@ Thumbs.db
 logs/
 
 # Uploads (runtime files)
-smart-campus/backend/uploads/*
-!smart-campus/backend/uploads/default-avatar.png
+backend/uploads/*
+!backend/uploads/defaults/
+!backend/uploads/default-avatar.png
 
 # Lock files (optional - uncomment if you don't want to commit them)
 # **/package-lock.json

@@ -158,8 +158,10 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   student_id INT NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
-  type ENUM('sick', 'personal', 'other') DEFAULT 'personal' COMMENT '病假/事假/其他',
+  type ENUM('sick', 'personal', 'other', 'late_return', 'absence') DEFAULT 'personal' COMMENT '病假/事假/其他/晚归/不归',
   reason TEXT NOT NULL,
+  parent_consent_url VARCHAR(255) DEFAULT NULL COMMENT '家长知情书附件URL',
+  late_time TIME DEFAULT NULL COMMENT '晚归预计时间',
   status TINYINT DEFAULT 0 COMMENT '0待审批 1已通过 2已拒绝',
   teacher_id INT DEFAULT NULL,
   reply TEXT DEFAULT NULL COMMENT '审批回复',
@@ -233,7 +235,7 @@ CREATE TABLE IF NOT EXISTS activity_score_records (
   reviewed_by INT DEFAULT NULL COMMENT '审核教师',
   reviewed_at DATETIME DEFAULT NULL,
   remark VARCHAR(255) DEFAULT NULL COMMENT '教师备注/拒绝原因',
-  UNIQUE KEY uk_activity_student_score (activity_id, student_id),
+  source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分',
   FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
   FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );

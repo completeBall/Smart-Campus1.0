@@ -2,7 +2,7 @@
   <div class="login-page">
     <!-- 动态背景粒子 -->
     <div class="particles">
-      <div v-for="n in 30" :key="n" class="particle" :style="getParticleStyle(n)"></div>
+      <div v-for="n in 80" :key="n" class="particle" :style="getParticleStyle(n)"></div>
     </div>
 
     <div class="login-container">
@@ -115,16 +115,27 @@ const rules = {
 }
 
 const getParticleStyle = (n) => {
-  const size = Math.random() * 6 + 2
+  const size = Math.random() * 10 + 3
   const left = Math.random() * 100
-  const delay = Math.random() * 10
-  const duration = Math.random() * 10 + 10
+  const delay = Math.random() * 15
+  const duration = Math.random() * 12 + 12
+  const opacity = Math.random() * 0.4 + 0.5
+  const colors = [
+    `rgba(255, 255, 255, ${opacity})`,
+    `rgba(200, 220, 255, ${opacity})`,
+    `rgba(240, 200, 255, ${opacity})`,
+    `rgba(180, 230, 255, ${opacity})`
+  ]
+  const color = colors[n % colors.length]
+  const glow = `0 0 ${size * 2}px ${size / 2}px ${color.replace(/[\d.]+\)$/, '0.25)')}`
   return {
     width: `${size}px`,
     height: `${size}px`,
     left: `${left}%`,
     animationDelay: `${delay}s`,
-    animationDuration: `${duration}s`
+    animationDuration: `${duration}s`,
+    background: color,
+    boxShadow: glow
   }
 }
 
@@ -171,19 +182,20 @@ const handleLogin = async () => {
 
 .particle {
   position: absolute;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   animation: float linear infinite;
-  bottom: -10px;
+  bottom: -20px;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
 }
 
 @keyframes float {
   0% {
     transform: translateY(0) scale(1);
-    opacity: 0.8;
+    opacity: 0.9;
   }
   100% {
-    transform: translateY(-100vh) scale(0.2);
+    transform: translateY(-110vh) scale(0.3);
     opacity: 0;
   }
 }

@@ -13,3 +13,17 @@ export const getNotices = () => request.get('/admin/notices')
 export const createNotice = (data) => request.post('/admin/notices', data)
 export const deleteNotice = (id) => request.delete(`/admin/notices/${id}`)
 export const getCollegesMajors = () => request.get('/admin/colleges-majors')
+
+// 下载用户导入模板
+export const downloadUserTemplate = () => {
+  return request.get('/admin/users/template', { responseType: 'blob' })
+}
+
+// 批量导入用户
+export const importUsers = (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/admin/users/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

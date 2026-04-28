@@ -5,9 +5,9 @@
     </el-button>
 
     <!-- 主页背景图 -->
-    <div v-if="profile?.user?.background_image" class="profile-bg-wrapper">
+    <div v-if="displayBackground" class="profile-bg-wrapper">
       <img
-        :src="profile.user.background_image"
+        :src="displayBackground"
         class="profile-bg-scroll-img"
         alt="主页背景"
         @click="previewBackground"
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <el-card v-if="profile" class="header-card" :class="{ 'has-bg': profile.user.background_image }">
+    <el-card v-if="profile" class="header-card" :class="{ 'has-bg': displayBackground }">
       <div class="header-banner">
         <div class="avatar-area">
           <el-avatar :size="100" :src="profile.user.avatar" class="big-avatar">
@@ -93,7 +93,7 @@
     </el-card>
 
     <!-- 精选照片 -->
-    <el-card v-if="profile && featuredPhotos.length" class="photos-card">
+    <el-card v-if="profile && displayFeaturedPhotos.length" class="photos-card">
       <template #header>
         <div class="card-title-line">
           <span class="card-title">精选照片</span>
@@ -101,7 +101,7 @@
       </template>
       <div class="photo-gallery">
         <div
-          v-for="(url, idx) in featuredPhotos"
+          v-for="(url, idx) in displayFeaturedPhotos"
           :key="idx"
           class="gallery-item"
           @click="previewPhoto(url)"
@@ -202,6 +202,12 @@ const roleTagType = computed(() => {
   return m[profile.value?.user?.role] || 'info'
 })
 
+const DEFAULT_BG = '/uploads/defaults/default-bg.jpg'
+
+const displayBackground = computed(() => {
+  return profile.value?.user?.background_image || DEFAULT_BG
+})
+
 const featuredPhotos = computed(() => {
   if (!profile.value?.user?.featured_photos) return []
   const fp = profile.value.user.featured_photos
@@ -212,6 +218,11 @@ const featuredPhotos = computed(() => {
   } catch (e) {
     return []
   }
+})
+
+const displayFeaturedPhotos = computed(() => {
+  const photos = featuredPhotos.value
+  return photos.length > 0 ? photos : [DEFAULT_BG]
 })
 
 const previewPhoto = (url) => {

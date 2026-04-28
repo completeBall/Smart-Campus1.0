@@ -39,6 +39,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
     await pool.execute(
+      'UPDATE users SET last_login = NOW() WHERE id = ?',
+      [user.id]
+    );
+    await pool.execute(
       'INSERT INTO operation_logs (user_id, action, detail, created_at) VALUES (?, ?, ?, NOW())',
       [user.id, '登录', `${user.name} 登录了系统`]
     );
