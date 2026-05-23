@@ -383,3 +383,16 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 游戏记录表
+CREATE TABLE IF NOT EXISTS game_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL,
+  score INT DEFAULT 0,
+  level VARCHAR(20) DEFAULT 'easy',
+  play_time INT DEFAULT 0 COMMENT '完成用时(秒)',
+  play_date DATE NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);

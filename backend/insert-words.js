@@ -1,4 +1,7 @@
 const mysql = require('mysql2/promise');
+const { dbConfig } = require('./config/db');
+
+const dbConfigWords = { ...dbConfig, connectionLimit: 10, waitForConnections: true };
 
 const words = [
   ['abandon', '抛弃，放弃，放纵'], ['ability', '能力，能耐，本领'], ['able', '有能力的，能干的'],
@@ -259,7 +262,7 @@ function getDistractors(correct) {
 }
 
 (async () => {
-  const pool = mysql.createPool({ host: 'localhost', user: 'root', password: '123456', database: 'smart_campus', waitForConnections: true, connectionLimit: 10 });
+  const pool = mysql.createPool(dbConfigWords);
   let count = 0;
   for (const [word, meaning] of words) {
     const options = getDistractors(word);

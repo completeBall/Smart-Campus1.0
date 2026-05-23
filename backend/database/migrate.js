@@ -3,6 +3,24 @@ const fs = require('fs');
 const path = require('path');
 const { dbConfig } = require('../config/db');
 
+// 检测是否配置了 .env，没有则提醒
+function checkEnvWarning() {
+  const envPath = path.join(__dirname, '..', '.env');
+  const envExample = path.join(__dirname, '..', '.env.example');
+  if (!fs.existsSync(envPath)) {
+    console.log('========================================');
+    console.log('  [!] 未检测到 backend/.env 文件');
+    console.log('  正在使用默认数据库配置:');
+    console.log(`     主机: ${dbConfig.host}`);
+    console.log(`     用户: ${dbConfig.user}`);
+    console.log(`     密码: ${dbConfig.password}`);
+    console.log(`     数据库: ${dbConfig.database}`);
+    console.log('');
+    console.log('  如需自定义配置，请复制 .env.example 为 .env 并修改');
+    console.log('========================================');
+  }
+}
+
 async function ensureDatabase() {
   const conn = await mysql.createConnection({
     host: dbConfig.host,
@@ -34,7 +52,6 @@ async function runInitSql() {
 
   const initPath = path.join(__dirname, 'init.sql');
   let sql = fs.readFileSync(initPath, 'utf8');
-  // 替换 init.sql 中硬编码的数据库名为用户配置的名称
   sql = sql.replace(/smart_campus/g, dbConfig.database);
   const conn2 = await mysql.createConnection({
     host: dbConfig.host,
@@ -73,6 +90,32 @@ async function runMigrations() {
 }
 
 async function migrate() {
+  checkEnvWarning();
+
+  // 先测试 MySQL 连接，给出清晰错误提示
+  try {
+    const testConn = await mysql.createConnection({
+      host: dbConfig.host,
+      user: dbConfig.user,
+      password: dbConfig.password
+    });
+    await testConn.ping();
+    await testConn.end();
+  } catch (err) {
+    if (err.code === 'ECONNREFUSED') {
+      throw new Error(
+        `无法连接到 MySQL (${dbConfig.host})，请检查 MySQL 服务是否已启动`
+      );
+    }
+    if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+      throw new Error(
+        `MySQL 登录失败: 用户 '${dbConfig.user}' 密码不正确，请检查 backend/.env 中的数据库配置`
+      );
+    }
+    throw err;
+  }
+
+  console.log('MySQL connection verified, starting migration...');
   await ensureDatabase();
   await runInitSql();
   await runMigrations();
