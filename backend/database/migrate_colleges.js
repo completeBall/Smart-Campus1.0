@@ -30,9 +30,25 @@ async function migrate() {
   `);
   console.log('Created majors table');
 
+  // 3. Add college_id and major_id to users table (先加字段，后续去重才能引用)
+  try {
+    await conn.execute(`ALTER TABLE users ADD COLUMN college_id INT DEFAULT NULL COMMENT '学院ID'`);
+    console.log('Added college_id to users');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    console.log('college_id already exists');
+  }
+
+  try {
+    await conn.execute(`ALTER TABLE users ADD COLUMN major_id INT DEFAULT NULL COMMENT '专业ID'`);
+    console.log('Added major_id to users');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    console.log('major_id already exists');
+  }
+
   // 2.5 清理历史重复数据(早期版本未加 UNIQUE 约束,可能产生重复行)
-  // 这些操作幂等:当库中无重复时执行 0 行,有重复时合并到最小 id
-  // 第一步:把 users 中指向重复 major 的引用统一指向同 (college_id, name) 组里 id 最小的那个
+  // 注: 此步骤依赖上方的 college_id / major_id 字段,故放在字段添加之后
   const [fixUsers] = await conn.execute(`
     UPDATE users u
     JOIN majors m_old ON u.major_id = m_old.id
@@ -50,7 +66,6 @@ async function migrate() {
     console.log(`Repointed ${fixUsers.affectedRows} user rows to canonical major_id`);
   }
 
-  // 第二步:删除 majors 表中除每组最小 id 之外的所有重复行
   const [delMajors] = await conn.execute(`
     DELETE m FROM majors m
     INNER JOIN (
@@ -66,8 +81,6 @@ async function migrate() {
     console.log(`Removed ${delMajors.affectedRows} duplicate major rows`);
   }
 
-  // 第三步:删除 colleges 表中无 users 引用且无 majors 引用的重复学院
-  // (按 name 分组,只保留每组最小 id)
   const [delColleges] = await conn.execute(`
     DELETE c FROM colleges c
     INNER JOIN (
@@ -95,23 +108,6 @@ async function migrate() {
     console.log('Added UNIQUE constraint on majors(college_id, name)');
   } catch (e) {
     if (e.code !== 'ER_DUP_KEYNAME') throw e;
-  }
-
-  // 3. Add college_id and major_id to users table
-  try {
-    await conn.execute(`ALTER TABLE users ADD COLUMN college_id INT DEFAULT NULL COMMENT '学院ID'`);
-    console.log('Added college_id to users');
-  } catch (e) {
-    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
-    console.log('college_id already exists');
-  }
-
-  try {
-    await conn.execute(`ALTER TABLE users ADD COLUMN major_id INT DEFAULT NULL COMMENT '专业ID'`);
-    console.log('Added major_id to users');
-  } catch (e) {
-    if (e.code !== 'ER_DUP_FIELDNAME') throw e;
-    console.log('major_id already exists');
   }
 
   // 4. Seed colleges data
