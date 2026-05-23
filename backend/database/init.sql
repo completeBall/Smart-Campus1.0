@@ -396,3 +396,25 @@ CREATE TABLE IF NOT EXISTS game_records (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 单词库表
+CREATE TABLE IF NOT EXISTS word_bank (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  word VARCHAR(100) NOT NULL,
+  meaning VARCHAR(255) NOT NULL,
+  options JSON,
+  UNIQUE KEY uk_word (word)
+);
+
+-- 单词学习记录表
+CREATE TABLE IF NOT EXISTS word_study_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  study_date DATE NOT NULL,
+  total_words INT DEFAULT 0,
+  correct_count INT DEFAULT 0,
+  accuracy DECIMAL(5,2) DEFAULT 0,
+  score_added TINYINT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_student_date (student_id, study_date)
+);

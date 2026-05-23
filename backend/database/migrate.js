@@ -3,10 +3,16 @@ const fs = require('fs');
 const path = require('path');
 const { dbConfig } = require('../config/db');
 
+// 判断是否为表空间损坏错误 (MySQL 1812 / 1146)
+function isTablespaceError(err) {
+  return err.code === 'ER_TABLESPACE_MISSING' ||
+         err.code === 'ER_NO_SUCH_TABLE' ||
+         (err.message && err.message.includes('Tablespace is missing'));
+}
+
 // 检测是否配置了 .env，没有则提醒
 function checkEnvWarning() {
   const envPath = path.join(__dirname, '..', '.env');
-  const envExample = path.join(__dirname, '..', '.env.example');
   if (!fs.existsSync(envPath)) {
     console.log('========================================');
     console.log('  [!] 未检测到 backend/.env 文件');
@@ -34,20 +40,62 @@ async function ensureDatabase() {
   await conn.end();
 }
 
+// 尝试执行 DROP TABLE 清理表空间残留定义，返回清理数量
+async function cleanupOrphanTables(conn) {
+  const [tables] = await conn.execute(
+    `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?`,
+    [dbConfig.database]
+  );
+  let cleaned = 0;
+  for (const t of tables) {
+    try {
+      await conn.execute(`DROP TABLE IF EXISTS \`${t.TABLE_NAME}\``);
+      cleaned++;
+    } catch (e) { /* 个别表无法清理则跳过 */ }
+  }
+  return cleaned;
+}
+
 async function runInitSql() {
   const conn = await mysql.createConnection(dbConfig);
+  let needsInit = false;
   try {
     const [tables] = await conn.execute(
-      `SELECT TABLE_NAME FROM information_schema.TABLES
+      `SELECT COUNT(*) AS cnt FROM information_schema.TABLES
        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users'`,
       [dbConfig.database]
     );
-    if (tables.length > 0) {
-      console.log('Core tables already exist, skipping init.sql');
-      return;
+    if (tables[0].cnt === 0) {
+      needsInit = true;
+    } else {
+      // 用户表存在，验证是否可用
+      try {
+        await conn.execute('SELECT 1 FROM users LIMIT 1');
+        console.log('Core tables verified, skipping init.sql');
+      } catch (err) {
+        if (isTablespaceError(err)) {
+          console.log('检测到已有表空间损坏，将清理并重建...');
+          needsInit = true;
+        } else {
+          throw err;
+        }
+      }
     }
   } finally {
     await conn.end();
+  }
+
+  if (!needsInit) return;
+
+  // 清理所有残留表定义后重新执行 init.sql
+  const cleanConn = await mysql.createConnection(dbConfig);
+  try {
+    const cleaned = await cleanupOrphanTables(cleanConn);
+    if (cleaned > 0) {
+      console.log(`已清理 ${cleaned} 个损坏表，正在重新初始化...`);
+    }
+  } finally {
+    await cleanConn.end();
   }
 
   const initPath = path.join(__dirname, 'init.sql');
@@ -123,6 +171,7 @@ async function migrate() {
 }
 
 module.exports = migrate;
+module.exports.isTablespaceError = isTablespaceError;
 
 if (require.main === module) {
   migrate().catch(err => {

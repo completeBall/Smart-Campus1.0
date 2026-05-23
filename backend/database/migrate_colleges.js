@@ -1,5 +1,22 @@
 const mysql = require('mysql2/promise');
 const { dbConfig } = require('../config/db');
+const { isTablespaceError } = require('./migrate');
+
+async function createTableSafe(conn, tableName, createSql) {
+  try {
+    await conn.execute(createSql);
+    console.log(`Created ${tableName} table`);
+  } catch (err) {
+    if (isTablespaceError(err)) {
+      console.log(`${tableName} 表空间损坏，尝试清理重建...`);
+      await conn.execute(`DROP TABLE IF EXISTS \`${tableName}\``);
+      await conn.execute(createSql);
+      console.log(`Created ${tableName} table (after cleanup)`);
+    } else {
+      throw err;
+    }
+  }
+}
 
 async function migrate() {
   const conn = await mysql.createConnection(dbConfig);
@@ -7,7 +24,7 @@ async function migrate() {
   console.log('Starting migration...');
 
   // 1. Create colleges table
-  await conn.execute(`
+  await createTableSafe(conn, 'colleges', `
     CREATE TABLE IF NOT EXISTS colleges (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(100) NOT NULL COMMENT '学院名称',
@@ -15,10 +32,9 @@ async function migrate() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
-  console.log('Created colleges table');
 
   // 2. Create majors table
-  await conn.execute(`
+  await createTableSafe(conn, 'majors', `
     CREATE TABLE IF NOT EXISTS majors (
       id INT AUTO_INCREMENT PRIMARY KEY,
       college_id INT NOT NULL COMMENT '所属学院ID',
@@ -28,7 +44,6 @@ async function migrate() {
       FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
-  console.log('Created majors table');
 
   // 3. Add college_id and major_id to users table (先加字段，后续去重才能引用)
   try {

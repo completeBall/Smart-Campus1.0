@@ -877,19 +877,35 @@ router.get('/colleges', async (req, res) => {
 /* ==================== 每日背单词（每天3次机会） ==================== */
 
 // 自动建表并修复错误约束（每天应允许多条记录）
+// 注意：word_bank / word_study_records 表已同时通过 init.sql 创建
 (async () => {
   try {
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS word_bank (
+    try {
+      await pool.execute(`CREATE TABLE IF NOT EXISTS word_bank (
         id INT AUTO_INCREMENT PRIMARY KEY,
         word VARCHAR(100) NOT NULL,
         meaning VARCHAR(255) NOT NULL,
         options JSON,
         UNIQUE KEY uk_word (word)
-      )
-    `);
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS word_study_records (
+      )`);
+    } catch (e) {
+      if (e.message && e.message.includes('Tablespace is missing')) {
+        await pool.execute('DROP TABLE IF EXISTS word_bank');
+        await pool.execute(`CREATE TABLE word_bank (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          word VARCHAR(100) NOT NULL,
+          meaning VARCHAR(255) NOT NULL,
+          options JSON,
+          UNIQUE KEY uk_word (word)
+        )`);
+        console.log('[DB Fix] word_bank 表空间已修复');
+      } else {
+        throw e;
+      }
+    }
+
+    try {
+      await pool.execute(`CREATE TABLE IF NOT EXISTS word_study_records (
         id INT AUTO_INCREMENT PRIMARY KEY,
         student_id INT NOT NULL,
         study_date DATE NOT NULL,
@@ -899,8 +915,26 @@ router.get('/colleges', async (req, res) => {
         score_added TINYINT DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_student_date (student_id, study_date)
-      )
-    `);
+      )`);
+    } catch (e) {
+      if (e.message && e.message.includes('Tablespace is missing')) {
+        await pool.execute('DROP TABLE IF EXISTS word_study_records');
+        await pool.execute(`CREATE TABLE word_study_records (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          student_id INT NOT NULL,
+          study_date DATE NOT NULL,
+          total_words INT DEFAULT 0,
+          correct_count INT DEFAULT 0,
+          accuracy DECIMAL(5,2) DEFAULT 0,
+          score_added TINYINT DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_student_date (student_id, study_date)
+        )`);
+        console.log('[DB Fix] word_study_records 表空间已修复');
+      } else {
+        throw e;
+      }
+    }
     // 若存在旧版错误的唯一约束则删除（业务允许每天3次）
     const [indexes] = await pool.execute(`
       SELECT 1 FROM information_schema.STATISTICS
@@ -915,11 +949,10 @@ router.get('/colleges', async (req, res) => {
 
     // 修复 activity_score_records：删除错误的唯一约束，并补 source_type 字段
     try {
-      await pool.execute(`
-        ALTER TABLE activity_score_records
-        ADD COLUMN IF NOT EXISTS source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分'
-      `);
-    } catch (e) { /* 字段已存在则忽略 */ }
+      await pool.execute(`ALTER TABLE activity_score_records ADD COLUMN source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分'`);
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    }
 
     const [scoreIndexes] = await pool.execute(`
       SELECT 1 FROM information_schema.STATISTICS
@@ -934,17 +967,17 @@ router.get('/colleges', async (req, res) => {
 
     // 修复 leave_requests：补全晚归/不归相关字段
     try {
-      await pool.execute(`
-        ALTER TABLE leave_requests
-        ADD COLUMN IF NOT EXISTS parent_consent_url VARCHAR(255) DEFAULT NULL COMMENT '家长知情书附件URL',
-        ADD COLUMN IF NOT EXISTS late_time TIME DEFAULT NULL COMMENT '晚归预计时间'
-      `);
-    } catch (e) { /* 字段已存在则忽略 */ }
+      await pool.execute(`ALTER TABLE leave_requests ADD COLUMN parent_consent_url VARCHAR(255) DEFAULT NULL COMMENT '家长知情书附件URL'`);
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    }
     try {
-      await pool.execute(`
-        ALTER TABLE leave_requests
-        MODIFY COLUMN type ENUM('sick','personal','other','late_return','absence') DEFAULT 'personal'
-      `);
+      await pool.execute(`ALTER TABLE leave_requests ADD COLUMN late_time TIME DEFAULT NULL COMMENT '晚归预计时间'`);
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    }
+    try {
+      await pool.execute(`ALTER TABLE leave_requests MODIFY COLUMN type ENUM('sick','personal','other','late_return','absence') DEFAULT 'personal'`);
     } catch (e) { /* 枚举已扩展或失败则忽略 */ }
   } catch (e) {
     console.error('[DB Fix] 单词表初始化失败:', e.message);
