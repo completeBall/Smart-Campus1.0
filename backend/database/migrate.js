@@ -118,6 +118,7 @@ async function runInitSql() {
 
 async function runMigrations() {
   const migrations = [
+    { name: 'seed_users', fn: require('./migrate_seed_users') },
     { name: 'colleges', fn: require('./migrate_colleges') },
     { name: 'forum', fn: require('./migrate_forum') },
     { name: 'social', fn: require('./migrate_social') },

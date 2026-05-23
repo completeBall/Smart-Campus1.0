@@ -242,20 +242,20 @@ CREATE TABLE IF NOT EXISTS activity_score_records (
 
 -- 插入默认管理员
 INSERT INTO users (username, password, name, role, avatar) VALUES
-('taball', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '系统管理员', 'admin', '/uploads/default-avatar.png');
+('taball', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '系统管理员', 'admin', '/uploads/default-avatar.png');
 -- 密码: 123456
 
 -- 插入示例教师
 INSERT INTO users (username, password, name, role, phone, email, avatar) VALUES
-('teacher1', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '王老师', 'teacher', '13800138001', 'wang@school.com', NULL),
-('teacher2', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '李老师', 'teacher', '13800138002', 'li@school.com', NULL);
+('teacher1', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '王老师', 'teacher', '13800138001', 'wang@school.com', NULL),
+('teacher2', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '李老师', 'teacher', '13800138002', 'li@school.com', NULL);
 
 -- 插入示例学生
 INSERT INTO users (username, password, name, role, class_name, phone, avatar) VALUES
-('student1', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', 't个球', 'student', '软件技术一班', '13900139001', NULL),
-('student2', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '李四', 'student', '软件技术一班', '13900139002', NULL),
-('student3', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '王五', 'student', '健康管理二班', '13900139003', NULL),
-('student4', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqQzBZN0UfGNEKjN8X4J8QW0Q8W0q', '赵六', 'student', '健康管理二班', '13900139004', NULL);
+('student1', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', 't个球', 'student', '软件技术一班', '13900139001', NULL),
+('student2', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '李四', 'student', '软件技术一班', '13900139002', NULL),
+('student3', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '王五', 'student', '健康管理二班', '13900139003', NULL),
+('student4', '$2a$10$0AhiVwIdqqMaj/OrtLM7z.ChCfJHizabWzvo086aKdbecF7D60N4G', '赵六', 'student', '健康管理二班', '13900139004', NULL);
 
 -- 插入示例课程表
 INSERT INTO schedules (teacher_id, course_name, class_name, day_of_week, start_time, end_time, classroom) VALUES
