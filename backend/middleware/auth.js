@@ -1,5 +1,6 @@
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'smart-campus-secret-key-2024';
+const SECRET_KEY = process.env.JWT_SECRET || 'smart-campus-secret-key-2024';
 
 function authMiddleware(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];

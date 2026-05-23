@@ -1,12 +1,8 @@
 const mysql = require('mysql2/promise');
+const { dbConfig } = require('../config/db');
 
 async function migrate() {
-  const conn = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '123456',
-    database: 'smart_campus'
-  });
+  const conn = await mysql.createConnection(dbConfig);
 
   console.log('Starting forum migration (likes + images + attachments)...');
 
@@ -57,7 +53,11 @@ async function migrate() {
   console.log('Forum migration completed successfully!');
 }
 
-migrate().catch(err => {
-  console.error('Migration failed:', err.message);
-  process.exit(1);
-});
+module.exports = migrate;
+
+if (require.main === module) {
+  migrate().catch(err => {
+    console.error('Migration failed:', err.message);
+    process.exit(1);
+  });
+}

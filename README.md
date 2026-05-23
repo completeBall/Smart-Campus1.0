@@ -96,23 +96,23 @@ smart-campus/
 
 ### 1. 环境要求
 - Node.js >= 16
-- MySQL >= 8.0
+- MySQL >= 8.0（确保 MySQL 服务已启动）
 
-### 2. 数据库初始化
+### 2. 配置数据库连接
 ```bash
-# 登录 MySQL
-mysql -u root -p --default-character-set=utf8mb4
+cd backend
+npm install
 
-# 执行初始化脚本（密码: 123456）
-source backend/database/init.sql
+# 复制环境变量模板并修改为你的 MySQL 配置
+copy .env.example .env
+# 编辑 .env，修改 DB_HOST、DB_USER、DB_PASSWORD 等
 ```
 
-后端服务启动时会自动执行数据库迁移，创建学院/专业表并填充种子数据。
+**注意：首次启动时会自动创建数据库并执行所有迁移，无需手动运行 init.sql。**
 
 ### 3. 启动后端
 ```bash
 cd backend
-npm install
 npm start
 # 服务运行在 http://localhost:3000
 # 开发模式可使用 npm run dev（nodemon 热重载）
@@ -201,16 +201,22 @@ start.ps1
 
 ## 配置文件说明
 
+### 后端配置（backend/.env）
+首次使用请复制 `.env.example` 为 `.env`，按需修改以下配置：
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| DB_HOST | localhost | MySQL 主机地址 |
+| DB_USER | root | MySQL 用户名 |
+| DB_PASSWORD | 123456 | MySQL 密码 |
+| DB_NAME | smart_campus | 数据库名（自动创建） |
+| PORT | 3000 | 后端服务端口 |
+| JWT_SECRET | smart-campus-secret-key-2024 | JWT 签名密钥 |
+
 ### vite.config.js
 - 开发服务器端口：5173
 - 代理：`/api` 和 `/uploads` 代理到 `http://localhost:3000`
 - 路径别名：`@` 指向 `src`
-
-### config/db.js
-- 主机：localhost
-- 用户：root
-- 密码：123456
-- 数据库：smart_campus
 
 ## 作者
 

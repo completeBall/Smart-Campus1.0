@@ -1,12 +1,8 @@
 const mysql = require('mysql2/promise');
+const { dbConfig } = require('../config/db');
 
 async function migrate() {
-  const conn = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '123456',
-    database: 'smart_campus'
-  });
+  const conn = await mysql.createConnection(dbConfig);
 
   console.log('Starting social/attendance/doudizhu migration...');
 
@@ -127,11 +123,17 @@ async function migrate() {
   }
 
   // 9. game_records.game_type 扩枚举: doudizhu
-  await conn.execute(`
-    ALTER TABLE game_records
-    MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu') NOT NULL
-  `);
-  console.log('Extended game_records.game_type ENUM with doudizhu');
+  try {
+    await conn.execute(`
+      ALTER TABLE game_records
+      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL
+    `);
+    console.log('Extended game_records.game_type ENUM');
+  } catch (e) {
+    if (e.code !== 'ER_DUP_FIELDNAME' && !e.message.includes('Duplicate')) {
+      console.log('game_type ENUM may already contain new values or table missing:', e.message);
+    }
+  }
 
   // 10. user_statuses 用户24小时状态(公开,好友可见)
   await conn.execute(`
@@ -183,7 +185,11 @@ async function migrate() {
   console.log('Migration completed successfully!');
 }
 
-migrate().catch(err => {
-  console.error('Migration failed:', err.message);
-  process.exit(1);
-});
+module.exports = migrate;
+
+if (require.main === module) {
+  migrate().catch(err => {
+    console.error('Migration failed:', err.message);
+    process.exit(1);
+  });
+}

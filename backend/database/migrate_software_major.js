@@ -1,16 +1,12 @@
 const mysql = require('mysql2/promise');
+const { dbConfig } = require('../config/db');
 
 /**
  * 把"人工智能学院"里隐含的"计算机"专业替换成"软件技术",
  * 并把现有 student1、student2 的 class_name 改成 "软件技术一班"
  */
 async function migrate() {
-  const conn = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '123456',
-    database: 'smart_campus'
-  });
+  const conn = await mysql.createConnection(dbConfig);
 
   console.log('[migrate_software_major] Starting...');
 
@@ -89,7 +85,11 @@ async function migrate() {
   console.log('[migrate_software_major] Done.');
 }
 
-migrate().catch(err => {
-  console.error('[migrate_software_major] Failed:', err.message);
-  process.exit(1);
-});
+module.exports = migrate;
+
+if (require.main === module) {
+  migrate().catch(err => {
+    console.error('[migrate_software_major] Failed:', err.message);
+    process.exit(1);
+  });
+}

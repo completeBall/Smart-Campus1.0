@@ -1,8 +1,16 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const app = express();
+
+// 确保 uploads 目录存在
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 app.use(cors());
 app.use(express.json());
@@ -101,8 +109,8 @@ app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: '服务运行中' });
 });
 
-// 启动时自动执行数据库迁移
-const migrate = require('./database/migrate_colleges');
+// 启动时自动执行数据库迁移（首次运行会自动创建数据库和执行init.sql）
+const migrate = require('./database/migrate');
 migrate().then(() => {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
@@ -110,5 +118,8 @@ migrate().then(() => {
   });
 }).catch(err => {
   console.error('启动失败（数据库迁移出错）:', err.message);
+  console.error('请检查:');
+  console.error('  1. MySQL 服务是否已启动');
+  console.error('  2. backend/.env 中的数据库配置是否正确（参考 .env.example）');
   process.exit(1);
 });

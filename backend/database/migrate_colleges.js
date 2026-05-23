@@ -1,12 +1,8 @@
 const mysql = require('mysql2/promise');
+const { dbConfig } = require('../config/db');
 
 async function migrate() {
-  const conn = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '123456',
-    database: 'smart_campus'
-  });
+  const conn = await mysql.createConnection(dbConfig);
 
   console.log('Starting migration...');
 
@@ -227,25 +223,39 @@ async function migrate() {
     ['健康管理']
   );
 
-  const swMajorId = swMajor ? swMajor.id : 5;   // 软件技术在第5个插入
-  const healthMajorId = healthMajor ? healthMajor.id : 15; // 健康管理在第15个插入
+  const swMajorId = swMajor ? swMajor.id : 5;
+  const healthMajorId = healthMajor ? healthMajor.id : 15;
 
-  await conn.execute(
-    `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = 4`,
-    [swMajorId]
-  );
-  await conn.execute(
-    `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = 5`,
-    [swMajorId]
-  );
-  await conn.execute(
-    `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = 6`,
-    [healthMajorId]
-  );
-  await conn.execute(
-    `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = 7`,
-    [healthMajorId]
-  );
+  // 通过用户名查找学生ID，避免硬编码ID导致的迁移失败
+  const [[s1]] = await conn.execute('SELECT id FROM users WHERE username = ?', ['student1']);
+  const [[s2]] = await conn.execute('SELECT id FROM users WHERE username = ?', ['student2']);
+  const [[s3]] = await conn.execute('SELECT id FROM users WHERE username = ?', ['student3']);
+  const [[s4]] = await conn.execute('SELECT id FROM users WHERE username = ?', ['student4']);
+
+  if (s1) {
+    await conn.execute(
+      `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
+      [swMajorId, s1.id]
+    );
+  }
+  if (s2) {
+    await conn.execute(
+      `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
+      [swMajorId, s2.id]
+    );
+  }
+  if (s3) {
+    await conn.execute(
+      `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
+      [healthMajorId, s3.id]
+    );
+  }
+  if (s4) {
+    await conn.execute(
+      `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
+      [healthMajorId, s4.id]
+    );
+  }
   console.log('Updated existing students with college/major info');
 
   // 7. Seed jobs data (仅在表为空时插入,避免重复)
