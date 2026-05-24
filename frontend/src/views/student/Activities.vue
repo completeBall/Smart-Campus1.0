@@ -17,7 +17,7 @@
                 </div>
                 <div class="permanent-info">
                   <h4>每日背单词</h4>
-                  <p>50个四级单词，最高正确率达标+0.5智育分</p>
+                  <p>50个四六级单词，最高正确率达标+0.5智育分</p>
                   <div class="permanent-meta">
                     <el-tag size="small" type="warning">今日剩余 {{ wordRemaining }}/3 次</el-tag>
                   </div>

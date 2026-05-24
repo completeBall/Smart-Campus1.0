@@ -11,7 +11,8 @@
         <div class="rule-text">
           <p>
             <strong>活动规则：</strong>
-            每天 <span class="highlight">3 次</span> 挑战机会，每次 50 个四级单词，
+            每天 <span class="highlight">3 次</span> 挑战机会，每次 50 个四六级单词，
+            每题限时 <span class="highlight">5 秒</span> 作答，超时视为答错，
             以 <span class="highlight">正确率最高</span> 的那次为准，达到 <span class="highlight">80%</span> 以上且完成 50 题即可为综测智育分 <span class="highlight">+0.5</span>！
           </p>
         </div>
@@ -60,6 +61,13 @@
       </div>
 
       <el-card class="word-card" v-if="currentWord">
+        <div class="countdown-bar">
+          <div class="countdown-timer" :class="{ urgent: countdown <= 2 }">
+            <span class="countdown-num">{{ countdown }}</span>
+            <span class="countdown-label">秒</span>
+          </div>
+          <el-progress :percentage="countdownPercent" :stroke-width="4" :color="countdownColor" :show-text="false" />
+        </div>
         <div class="word-meaning">{{ currentWord.meaning }}</div>
         <div class="word-hint">请选择对应的英文单词</div>
         <div class="options-grid">
@@ -77,6 +85,15 @@
         </div>
         <div v-if="answered" class="answer-feedback">
           <el-alert
+            v-if="timedOut"
+            title="时间到！本题未得分"
+            type="warning"
+            :closable="false"
+            show-icon
+            :description="`正确答案是：${currentWord.word}`"
+          />
+          <el-alert
+            v-else
             :title="isCorrect ? '回答正确！' : `回答错误，正确答案是：${currentWord.word}`"
             :type="isCorrect ? 'success' : 'error'"
             :closable="false"
@@ -98,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDailyWords, submitDailyWords } from '@/api/student'
@@ -116,10 +133,21 @@ const answers = ref({})
 const answered = ref(false)
 const selectedOption = ref('')
 const correctCount = ref(0)
+const countdown = ref(5)
+const timedOut = ref(false)
+let timerInterval = null
+
+const TIME_LIMIT = 5
 
 const currentWord = computed(() => words.value[currentIndex.value] || null)
 const progressPercent = computed(() => Math.round(((currentIndex.value + (answered.value ? 1 : 0)) / words.value.length) * 100))
 const isCorrect = computed(() => selectedOption.value === currentWord.value?.word)
+const countdownPercent = computed(() => (countdown.value / TIME_LIMIT) * 100)
+const countdownColor = computed(() => {
+  if (countdown.value <= 2) return '#f56c6c'
+  if (countdown.value <= 3) return '#e6a23c'
+  return '#667eea'
+})
 
 const progressColors = [
   { color: '#f56c6c', percentage: 20 },
@@ -128,6 +156,42 @@ const progressColors = [
   { color: '#1989fa', percentage: 80 },
   { color: '#6f7ad3', percentage: 100 }
 ]
+
+function clearTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+function startTimer() {
+  clearTimer()
+  countdown.value = TIME_LIMIT
+  timedOut.value = false
+  timerInterval = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearTimer()
+      handleTimeout()
+    }
+  }, 1000)
+}
+
+function handleTimeout() {
+  if (answered.value) return
+  timedOut.value = true
+  selectedOption.value = ''
+  answered.value = true
+  answers.value[currentWord.value.id] = '' // 空字符串表示超时未答
+  // 1.5 秒后自动跳到下一题或提交
+  setTimeout(() => {
+    if (currentIndex.value < words.value.length - 1) {
+      nextWord()
+    } else {
+      submitAll()
+    }
+  }, 1500)
+}
 
 const loadData = async () => {
   loading.value = true
@@ -140,6 +204,7 @@ const loadData = async () => {
     if (data.remaining > 0 && !data.studied) {
       words.value = data.words || []
       inProgress.value = true
+      startTimer()
     }
   } finally {
     loading.value = false
@@ -152,12 +217,14 @@ const startNewAttempt = () => {
   answered.value = false
   selectedOption.value = ''
   correctCount.value = 0
+  timedOut.value = false
   inProgress.value = true
   loadData()
 }
 
 const selectOption = (opt) => {
   if (answered.value) return
+  clearTimer()
   selectedOption.value = opt
   answered.value = true
   answers.value[currentWord.value.id] = opt
@@ -177,9 +244,12 @@ const nextWord = () => {
   currentIndex.value++
   answered.value = false
   selectedOption.value = ''
+  timedOut.value = false
+  nextTick(() => startTimer())
 }
 
 const submitAll = async () => {
+  clearTimer()
   try {
     const { data } = await submitDailyWords({ answers: answers.value })
     ElMessage.success(data.message)
@@ -192,7 +262,6 @@ const submitAll = async () => {
     })
     if (data.scoreAdded) hasScoreAdded.value = true
     remaining.value = Math.max(0, remaining.value - 1)
-    // Update best record
     const best = attempts.value.reduce((b, r) => r.accuracy > b.accuracy ? r : b, attempts.value[0])
     bestRecord.value = best
   } catch (e) {
@@ -200,7 +269,15 @@ const submitAll = async () => {
   }
 }
 
+// 当 inProgress 重新激活时（从记录页返回挑战），重启计时器
+watch(inProgress, (val) => {
+  if (val && words.value.length > 0 && !answered.value) {
+    nextTick(() => startTimer())
+  }
+})
+
 onMounted(loadData)
+onUnmounted(() => clearTimer())
 </script>
 
 <style scoped lang="scss">
@@ -256,6 +333,44 @@ onMounted(loadData)
       color: #666;
       font-size: 14px;
     }
+  }
+
+  .countdown-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+    .countdown-timer {
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+      min-width: 48px;
+      justify-content: center;
+      .countdown-num {
+        font-size: 28px;
+        font-weight: 700;
+        color: #667eea;
+        transition: color 0.3s;
+      }
+      .countdown-label {
+        font-size: 13px;
+        color: #999;
+      }
+      &.urgent {
+        animation: pulse 0.5s ease-in-out infinite alternate;
+        .countdown-num {
+          color: #f56c6c;
+        }
+      }
+    }
+    :deep(.el-progress) {
+      flex: 1;
+    }
+  }
+
+  @keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
   }
 
   .word-card {
