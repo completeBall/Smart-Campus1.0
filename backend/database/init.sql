@@ -418,3 +418,36 @@ CREATE TABLE IF NOT EXISTS word_study_records (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_student_date (student_id, study_date)
 );
+
+-- AI 閰嶇疆琛?
+CREATE TABLE IF NOT EXISTS ai_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  provider VARCHAR(30) NOT NULL DEFAULT 'deepseek',
+  api_key TEXT DEFAULT NULL,
+  model VARCHAR(120) DEFAULT NULL,
+  base_url VARCHAR(255) DEFAULT NULL,
+  enabled TINYINT DEFAULT 0,
+  last_test_status VARCHAR(20) DEFAULT NULL,
+  last_test_message VARCHAR(255) DEFAULT NULL,
+  last_test_at DATETIME DEFAULT NULL,
+  updated_by INT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- AI token 鐢ㄩ噺璁板綍琛?
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT DEFAULT NULL,
+  provider VARCHAR(30) NOT NULL,
+  model VARCHAR(120) DEFAULT NULL,
+  prompt_tokens INT DEFAULT 0,
+  completion_tokens INT DEFAULT 0,
+  total_tokens INT DEFAULT 0,
+  purpose VARCHAR(30) DEFAULT 'chat',
+  success TINYINT DEFAULT 1,
+  error_message VARCHAR(255) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ai_usage_created (created_at),
+  INDEX idx_ai_usage_user (user_id)
+);

@@ -36,6 +36,10 @@
               <el-icon><Bell /></el-icon>
               <span>通知公告</span>
             </el-menu-item>
+            <el-menu-item index="/admin/ai-settings">
+              <el-icon><Connection /></el-icon>
+              <span>AI 设置</span>
+            </el-menu-item>
           </template>
 
           <!-- 教师菜单 -->
@@ -101,6 +105,10 @@
             <el-menu-item index="/student/forum">
               <el-icon><ChatDotRound /></el-icon>
               <span>校园论坛</span>
+            </el-menu-item>
+            <el-menu-item index="/student/ai">
+              <el-icon><MagicStick /></el-icon>
+              <span>智能 AI</span>
             </el-menu-item>
             <el-menu-item index="/student/jobs">
               <el-icon><Briefcase /></el-icon>
@@ -286,6 +294,7 @@ const pageTitle = computed(() => {
     '/admin/logs': '操作日志',
     '/admin/feedback': '反馈管理',
     '/admin/notices': '通知公告',
+    '/admin/ai-settings': 'AI 设置',
     '/teacher/dashboard': '教学概览',
     '/teacher/tasks': '发布任务',
     '/teacher/submissions': '批改作业',
@@ -309,6 +318,7 @@ const pageTitle = computed(() => {
     '/student/friends': '我的好友',
     '/student/chat': '聊天',
     '/student/colleges': '学院专业',
+    '/student/ai': '智能 AI',
     '/student/feedback': '意见反馈'
   }
   // 处理动态路由
@@ -378,11 +388,13 @@ onBeforeUnmount(() => {
 
 .sidebar {
   background: #1a1a2e;
-  min-height: 100vh;
+  height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 100;
+  display: flex;
+  flex-direction: column;
 
   .logo {
     height: 60px;
@@ -405,6 +417,18 @@ onBeforeUnmount(() => {
 
 .sidebar-menu {
   border-right: none;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+  }
 }
 
 :deep(.el-menu-item:hover) {

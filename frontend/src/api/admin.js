@@ -13,6 +13,9 @@ export const getNotices = () => request.get('/admin/notices')
 export const createNotice = (data) => request.post('/admin/notices', data)
 export const deleteNotice = (id) => request.delete(`/admin/notices/${id}`)
 export const getCollegesMajors = () => request.get('/admin/colleges-majors')
+export const getAiSettings = () => request.get('/admin/ai-settings')
+export const saveAiSettings = (data) => request.put('/admin/ai-settings', data)
+export const testAiSettings = (data) => request.post('/admin/ai-settings/test', data, { timeout: 70000 })
 
 // 下载用户导入模板
 export const downloadUserTemplate = () => {

@@ -22,6 +22,7 @@ const routes = [
       { path: 'logs', component: () => import('@/views/admin/Logs.vue') },
       { path: 'feedback', component: () => import('@/views/admin/Feedback.vue') },
       { path: 'notices', component: () => import('@/views/admin/Notices.vue') },
+      { path: 'ai-settings', component: () => import('@/views/admin/AiSettings.vue') },
       { path: 'profile', component: () => import('@/views/profile/Profile.vue') }
     ]
   },
@@ -70,6 +71,7 @@ const routes = [
       { path: 'gomoku', component: () => import('@/views/student/Gomoku.vue') },
       { path: 'classmates', component: () => import('@/views/student/Classmates.vue') },
       { path: 'colleges', component: () => import('@/views/student/Colleges.vue') },
+      { path: 'ai', component: () => import('@/views/student/SmartAi.vue') },
       { path: 'feedback', component: () => import('@/views/student/Feedback.vue') },
       { path: 'friends', component: () => import('@/views/social/Friends.vue') },
       { path: 'chat', component: () => import('@/views/social/Chat.vue') },

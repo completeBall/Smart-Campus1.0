@@ -5,6 +5,7 @@ const pool = require('../config/db');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const xlsx = require('xlsx');
 const multer = require('multer');
+const { PROVIDERS, callChatCompletion, getProviderDefaults, maskKey } = require('../services/aiClient');
 
 router.use(authMiddleware);
 router.use(roleMiddleware(['admin']));
@@ -339,6 +340,209 @@ router.delete('/notices/:id', async (req, res) => {
     res.json({ code: 200, message: '删除成功' });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+const getAiSettingRow = async () => {
+  const [[row]] = await pool.execute('SELECT * FROM ai_settings ORDER BY id LIMIT 1');
+  return row;
+};
+
+const getAiUsageSummary = async () => {
+  const [[summary]] = await pool.execute(`
+    SELECT
+      COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+      COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+      COALESCE(SUM(total_tokens), 0) AS total_tokens,
+      COUNT(*) AS request_count,
+      COALESCE(SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END), 0) AS success_count
+    FROM ai_usage_logs
+  `);
+  const [recent] = await pool.execute(`
+    SELECT l.*, u.name AS user_name, u.role AS user_role
+    FROM ai_usage_logs l
+    LEFT JOIN users u ON l.user_id = u.id
+    ORDER BY l.created_at DESC
+    LIMIT 20
+  `);
+  return { summary, recent };
+};
+
+const sanitizeAiSetting = (row) => {
+  if (!row) {
+    const defaults = getProviderDefaults('deepseek');
+    return {
+      provider: 'deepseek',
+      provider_label: defaults.label,
+      model: defaults.model,
+      base_url: defaults.baseUrl,
+      enabled: 0,
+      has_key: false,
+      api_key_masked: ''
+    };
+  }
+  const defaults = getProviderDefaults(row.provider);
+  return {
+    id: row.id,
+    provider: row.provider,
+    provider_label: defaults.label,
+    model: row.model || defaults.model,
+    base_url: row.base_url || defaults.baseUrl,
+    enabled: Number(row.enabled || 0),
+    has_key: !!row.api_key,
+    api_key_masked: maskKey(row.api_key),
+    last_test_status: row.last_test_status,
+    last_test_message: row.last_test_message,
+    last_test_at: row.last_test_at,
+    updated_at: row.updated_at
+  };
+};
+
+const recordAiUsage = async ({ userId, provider, model, usage, purpose, success = 1, errorMessage = null }) => {
+  await pool.execute(
+    `INSERT INTO ai_usage_logs
+     (user_id, provider, model, prompt_tokens, completion_tokens, total_tokens, purpose, success, error_message, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      userId || null,
+      provider,
+      model || null,
+      usage?.prompt_tokens || 0,
+      usage?.completion_tokens || 0,
+      usage?.total_tokens || 0,
+      purpose,
+      success,
+      errorMessage ? String(errorMessage).slice(0, 255) : null
+    ]
+  );
+};
+
+router.get('/ai-settings', async (req, res) => {
+  try {
+    const row = await getAiSettingRow();
+    const usage = await getAiUsageSummary();
+    res.json({
+      code: 200,
+      data: {
+        setting: sanitizeAiSetting(row),
+        providers: PROVIDERS,
+        usage
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+router.put('/ai-settings', async (req, res) => {
+  const { provider, api_key, model, base_url, enabled } = req.body;
+  try {
+    if (!PROVIDERS[provider]) {
+      return res.json({ code: 400, message: '不支持的 AI 服务商' });
+    }
+    const defaults = getProviderDefaults(provider);
+    const row = await getAiSettingRow();
+    const finalKey = api_key ? String(api_key).trim() : (row?.api_key || null);
+    const finalModel = String(model || defaults.model).trim();
+    const finalBaseUrl = String(base_url || defaults.baseUrl).trim();
+    const finalEnabled = enabled ? 1 : 0;
+
+    if (row) {
+      await pool.execute(
+        `UPDATE ai_settings
+            SET provider = ?, api_key = ?, model = ?, base_url = ?, enabled = ?, updated_by = ?, updated_at = NOW()
+          WHERE id = ?`,
+        [provider, finalKey, finalModel, finalBaseUrl, finalEnabled, req.user.id, row.id]
+      );
+    } else {
+      await pool.execute(
+        `INSERT INTO ai_settings (provider, api_key, model, base_url, enabled, updated_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [provider, finalKey, finalModel, finalBaseUrl, finalEnabled, req.user.id]
+      );
+    }
+
+    const saved = await getAiSettingRow();
+    res.json({ code: 200, message: 'AI 配置已保存', data: sanitizeAiSetting(saved) });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+router.post('/ai-settings/test', async (req, res) => {
+  try {
+    const row = await getAiSettingRow();
+    const provider = req.body.provider || row?.provider || 'deepseek';
+    if (!PROVIDERS[provider]) {
+      return res.json({ code: 400, message: '不支持的 AI 服务商' });
+    }
+    const defaults = getProviderDefaults(provider);
+    const apiKey = req.body.api_key ? String(req.body.api_key).trim() : row?.api_key;
+    const model = String(req.body.model || row?.model || defaults.model).trim();
+    const baseUrl = String(req.body.base_url || row?.base_url || defaults.baseUrl).trim();
+
+    const result = await callChatCompletion({
+      provider,
+      apiKey,
+      model,
+      baseUrl,
+      temperature: 0.2,
+      maxTokens: 64,
+      messages: [
+        { role: 'system', content: '你是智慧校园系统的 AI 连接测试助手。' },
+        { role: 'user', content: '请用一句话回复：AI 连接测试成功。' }
+      ]
+    });
+
+    await recordAiUsage({
+      userId: req.user.id,
+      provider,
+      model: result.model,
+      usage: result.usage,
+      purpose: 'test',
+      success: 1
+    });
+    if (row?.id) {
+      await pool.execute(
+        `UPDATE ai_settings
+            SET enabled = 1, last_test_status = 'success', last_test_message = ?, last_test_at = NOW()
+          WHERE id = ?`,
+        [result.content.slice(0, 255), row.id]
+      );
+    }
+
+    res.json({
+      code: 200,
+      message: 'AI 连接测试成功',
+      data: {
+        reply: result.content,
+        provider,
+        model: result.model,
+        usage: result.usage
+      }
+    });
+  } catch (err) {
+    const row = await getAiSettingRow().catch(() => null);
+    const provider = req.body.provider || row?.provider || 'deepseek';
+    const model = req.body.model || row?.model || getProviderDefaults(provider).model;
+    await recordAiUsage({
+      userId: req.user.id,
+      provider,
+      model,
+      usage: {},
+      purpose: 'test',
+      success: 0,
+      errorMessage: err.message
+    }).catch(() => {});
+    if (row?.id) {
+      await pool.execute(
+        `UPDATE ai_settings
+            SET last_test_status = 'failed', last_test_message = ?, last_test_at = NOW()
+          WHERE id = ?`,
+        [String(err.message).slice(0, 255), row.id]
+      ).catch(() => {});
+    }
+    res.json({ code: 400, message: `AI 连接测试失败：${err.message}` });
   }
 });
 

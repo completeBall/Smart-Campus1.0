@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+const { callChatCompletion, getProviderDefaults, maskKey } = require('../services/aiClient');
 
 router.use(authMiddleware);
 router.use(roleMiddleware(['student']));
@@ -1221,6 +1222,153 @@ router.get('/games/my-rank', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+const getEnabledAiSetting = async () => {
+  const [[row]] = await pool.execute('SELECT * FROM ai_settings WHERE enabled = 1 ORDER BY id LIMIT 1');
+  return row;
+};
+
+const recordAiUsage = async ({ userId, provider, model, usage, purpose, success = 1, errorMessage = null }) => {
+  await pool.execute(
+    `INSERT INTO ai_usage_logs
+     (user_id, provider, model, prompt_tokens, completion_tokens, total_tokens, purpose, success, error_message, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      userId || null,
+      provider,
+      model || null,
+      usage?.prompt_tokens || 0,
+      usage?.completion_tokens || 0,
+      usage?.total_tokens || 0,
+      purpose,
+      success,
+      errorMessage ? String(errorMessage).slice(0, 255) : null
+    ]
+  );
+};
+
+router.get('/ai/status', async (req, res) => {
+  try {
+    const row = await getEnabledAiSetting();
+    const [[myUsage]] = await pool.execute(
+      `SELECT
+         COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+         COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+         COALESCE(SUM(total_tokens), 0) AS total_tokens,
+         COUNT(*) AS request_count
+       FROM ai_usage_logs
+       WHERE user_id = ? AND purpose = 'chat'`,
+      [req.user.id]
+    );
+
+    if (!row) {
+      return res.json({
+        code: 200,
+        data: {
+          enabled: false,
+          message: '管理员暂未启用智能 AI',
+          usage: myUsage
+        }
+      });
+    }
+
+    const defaults = getProviderDefaults(row.provider);
+    res.json({
+      code: 200,
+      data: {
+        enabled: true,
+        provider: row.provider,
+        provider_label: defaults.label,
+        model: row.model || defaults.model,
+        api_key_masked: maskKey(row.api_key),
+        usage: myUsage
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+router.post('/ai/chat', async (req, res) => {
+  const studentId = req.user.id;
+  try {
+    const row = await getEnabledAiSetting();
+    if (!row) {
+      return res.json({ code: 400, message: '管理员暂未启用智能 AI' });
+    }
+    if (!row.api_key) {
+      return res.json({ code: 400, message: '管理员尚未配置 AI API Key' });
+    }
+
+    const defaults = getProviderDefaults(row.provider);
+    const incoming = Array.isArray(req.body.messages) ? req.body.messages : [];
+    const userQuestion = String(req.body.question || '').trim();
+    const normalized = incoming
+      .filter(item => ['user', 'assistant'].includes(item.role) && String(item.content || '').trim())
+      .slice(-12)
+      .map(item => ({
+        role: item.role,
+        content: String(item.content).slice(0, 2000)
+      }));
+
+    if (userQuestion) {
+      normalized.push({ role: 'user', content: userQuestion.slice(0, 2000) });
+    }
+    if (normalized.length === 0) {
+      return res.json({ code: 400, message: '请输入要咨询的问题' });
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: '你是智慧校园学生端的智能 AI 助手，回答要清晰、友好、适合学生使用。可以帮助学习规划、作业思路、校园事务咨询和生活建议。不要编造学校内部不存在的数据。'
+      },
+      ...normalized
+    ];
+
+    const result = await callChatCompletion({
+      provider: row.provider,
+      apiKey: row.api_key,
+      model: row.model || defaults.model,
+      baseUrl: row.base_url || defaults.baseUrl,
+      temperature: Number(req.body.temperature || 0.7),
+      maxTokens: Number(req.body.max_tokens || 1200),
+      messages
+    });
+
+    await recordAiUsage({
+      userId: studentId,
+      provider: row.provider,
+      model: result.model,
+      usage: result.usage,
+      purpose: 'chat',
+      success: 1
+    });
+
+    res.json({
+      code: 200,
+      data: {
+        answer: result.content,
+        provider: row.provider,
+        provider_label: defaults.label,
+        model: result.model,
+        usage: result.usage
+      }
+    });
+  } catch (err) {
+    const row = await getEnabledAiSetting().catch(() => null);
+    await recordAiUsage({
+      userId: studentId,
+      provider: row?.provider || 'unknown',
+      model: row?.model || null,
+      usage: {},
+      purpose: 'chat',
+      success: 0,
+      errorMessage: err.message
+    }).catch(() => {});
+    res.json({ code: 400, message: `AI 回复失败：${err.message}` });
   }
 });
 
