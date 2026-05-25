@@ -100,10 +100,16 @@
       <el-col :span="12">
         <el-card shadow="hover" class="calendar-card">
           <template #header>
-            <span class="card-title">
-              <el-icon><Calendar /></el-icon>
-              学习日历
-            </span>
+            <div class="calendar-header">
+              <span class="card-title">
+                <el-icon><Calendar /></el-icon>
+                学习日历
+              </span>
+              <el-button link type="primary" @click="openBirthdayDialog">
+                <el-icon><Plus /></el-icon>
+                生日设置
+              </el-button>
+            </div>
           </template>
           <el-calendar v-model="calendarDate">
             <template #date-cell="{ data }">
@@ -119,6 +125,16 @@
                 <span v-if="getHoliday(data)" class="cell-holiday-name">
                   {{ getHoliday(data).name }}
                 </span>
+                <div v-if="getBirthdays(data).length" class="birthday-list">
+                  <span
+                    v-for="birthday in getBirthdays(data)"
+                    :key="birthday.id"
+                    class="birthday-chip"
+                    :title="birthday.name + '生日'"
+                  >
+                    🎂 {{ birthday.name }}
+                  </span>
+                </div>
               </div>
             </template>
           </el-calendar>
@@ -128,6 +144,7 @@
             <span class="legend-item"><span class="dot both"></span> 均有</span>
             <span class="legend-item"><span class="legend-emoji">🎉</span> 节日</span>
             <span class="legend-item"><span class="legend-emoji">🎒</span> 校历</span>
+            <span class="legend-item"><span class="legend-emoji">🎂</span> 生日</span>
           </div>
         </el-card>
       </el-col>
@@ -159,7 +176,8 @@
     </el-row>
 
     <!-- 学习备忘录 -->
-    <el-row :gutter="20" class="memo-row">
+    <MemoBoard />
+    <el-row v-if="false" :gutter="20" class="memo-row">
       <el-col :span="24">
         <el-card class="memo-card" shadow="hover">
           <template #header>
@@ -278,6 +296,56 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="birthdayDialogVisible"
+      title="生日设置"
+      width="560px"
+      :close-on-click-modal="false"
+      class="birthday-dialog"
+    >
+      <div class="birthday-own">
+        <el-form label-width="88px">
+          <el-form-item label="我的生日">
+            <el-date-picker
+              v-model="birthdayForm.mine.date"
+              type="date"
+              placeholder="选择自己的生日"
+              value-format="YYYY-MM-DD"
+              format="MM-DD"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="birthday-head">
+        <span>同学生日</span>
+        <el-button link type="primary" @click="addBirthdayRow">
+          <el-icon><Plus /></el-icon>
+          添加同学
+        </el-button>
+      </div>
+      <div class="birthday-rows">
+        <div v-for="(item, index) in birthdayForm.classmates" :key="item.id" class="birthday-row">
+          <el-input v-model="item.name" placeholder="同学姓名" maxlength="12" />
+          <el-date-picker
+            v-model="item.date"
+            type="date"
+            placeholder="生日"
+            value-format="YYYY-MM-DD"
+            format="MM-DD"
+            style="width: 160px"
+          />
+          <el-button link type="danger" @click="removeBirthdayRow(index)">
+            <el-icon><Delete /></el-icon>
+          </el-button>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="birthdayDialogVisible = false">取消</el-button>
+        <el-button type="primary" round @click="saveBirthdays">保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 通知列表弹窗 -->
     <el-dialog v-model="noticeDialogVisible" title="最新公告" width="600px">
       <div v-if="notices.length === 0" class="empty-text">暂无公告</div>
@@ -294,13 +362,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getStudentStatistics, getStudentTasks, getStudentSchedule, getStudentNotices } from '@/api/student'
 import { getMyStatus, setMyStatus, clearMyStatus } from '@/api/social'
+import MemoBoard from './MemoBoard.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -317,6 +386,14 @@ const todaySchedule = ref([])
 const notices = ref([])
 const calendarDate = ref(new Date())
 const calendarEvents = ref([])
+const birthdayDialogVisible = ref(false)
+const birthdayForm = reactive({
+  mine: {
+    name: '',
+    date: ''
+  },
+  classmates: []
+})
 
 // ===== 状态(24小时) =====
 const myStatus = ref(null)
@@ -472,6 +549,80 @@ const getHoliday = (data) => {
   return HOLIDAYS_LUNAR[dateStr] || HOLIDAYS_FIXED[md] || null
 }
 
+const birthdayKey = computed(() => `dashboard_birthdays_${userStore.userInfo.id || 'anon'}`)
+
+const emptyBirthday = () => ({
+  id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  name: '',
+  date: ''
+})
+
+const normalizeBirthday = (item = {}) => ({
+  id: item.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  name: item.name || '',
+  date: item.date || ''
+})
+
+const loadBirthdays = () => {
+  try {
+    const raw = localStorage.getItem(birthdayKey.value)
+    const parsed = raw ? JSON.parse(raw) : {}
+    birthdayForm.mine.name = parsed.mine?.name || userStore.userInfo.name || '我'
+    birthdayForm.mine.date = parsed.mine?.date || ''
+    birthdayForm.classmates = Array.isArray(parsed.classmates)
+      ? parsed.classmates.map(normalizeBirthday)
+      : []
+  } catch (e) {
+    birthdayForm.mine.name = userStore.userInfo.name || '我'
+    birthdayForm.mine.date = ''
+    birthdayForm.classmates = []
+  }
+}
+
+const saveBirthdays = () => {
+  const classmates = birthdayForm.classmates
+    .map((item) => normalizeBirthday(item))
+    .filter((item) => item.name.trim() && item.date)
+    .map((item) => ({ ...item, name: item.name.trim() }))
+
+  birthdayForm.classmates = classmates
+  birthdayForm.mine.name = userStore.userInfo.name || '我'
+  localStorage.setItem(birthdayKey.value, JSON.stringify({
+    mine: { name: birthdayForm.mine.name, date: birthdayForm.mine.date || '' },
+    classmates
+  }))
+  birthdayDialogVisible.value = false
+  ElMessage.success('生日已保存')
+}
+
+const openBirthdayDialog = () => {
+  loadBirthdays()
+  birthdayDialogVisible.value = true
+}
+
+const addBirthdayRow = () => {
+  birthdayForm.classmates.push(emptyBirthday())
+}
+
+const removeBirthdayRow = (index) => {
+  birthdayForm.classmates.splice(index, 1)
+}
+
+const getBirthdays = (data) => {
+  const dateStr = data.day.split(' ')[0]
+  const md = dateStr.slice(5)
+  const birthdays = []
+  if (birthdayForm.mine.date && birthdayForm.mine.date.slice(5) === md) {
+    birthdays.push({ id: 'mine', name: userStore.userInfo.name || '我', date: birthdayForm.mine.date })
+  }
+  birthdayForm.classmates.forEach((item) => {
+    if (item.name && item.date && item.date.slice(5) === md) {
+      birthdays.push(item)
+    }
+  })
+  return birthdays
+}
+
 const lastReadNoticeKey = computed(() => `last_read_notice_${userStore.userInfo.id || 'anon'}`)
 
 const getUnreadNoticeCount = () => {
@@ -530,6 +681,7 @@ const getCalendarCellClass = (data) => {
   const cls = []
   if (isToday) cls.push('is-today')
   if (holiday) cls.push('is-holiday')
+  if (getBirthdays(data).length) cls.push('is-birthday')
   return cls.join(' ')
 }
 
@@ -642,6 +794,7 @@ onMounted(() => {
   loadData()
   loadStatus()
   loadMemos()
+  loadBirthdays()
   // 每秒刷新一次"剩余时间",过期自动重新加载
   nowTimer = setInterval(() => {
     now.value = Date.now()
@@ -904,6 +1057,12 @@ onBeforeUnmount(() => {
 
   .calendar-row {
     margin-top: 20px;
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
     .calendar-card {
       :deep(.el-calendar__title) {
         font-weight: 600;
@@ -940,6 +1099,25 @@ onBeforeUnmount(() => {
         line-height: 1;
         white-space: nowrap;
       }
+      .birthday-list {
+        display: grid;
+        gap: 2px;
+        max-width: 100%;
+        justify-items: center;
+      }
+      .birthday-chip {
+        max-width: 64px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-radius: 999px;
+        padding: 1px 5px;
+        background: #fff0f6;
+        color: #d93672;
+        font-size: 10px;
+        line-height: 1.4;
+        font-weight: 600;
+      }
       .cell-dots {
         display: flex;
         gap: 3px;
@@ -959,6 +1137,10 @@ onBeforeUnmount(() => {
       }
       &.is-holiday {
         background: linear-gradient(135deg, rgba(245, 108, 108, 0.06) 0%, rgba(255, 200, 100, 0.06) 100%);
+        border-radius: 6px;
+      }
+      &.is-birthday {
+        background: linear-gradient(135deg, rgba(255, 105, 180, 0.08) 0%, rgba(255, 214, 102, 0.08) 100%);
         border-radius: 6px;
       }
     }
@@ -991,6 +1173,32 @@ onBeforeUnmount(() => {
           line-height: 1;
         }
       }
+    }
+  }
+
+  .birthday-dialog {
+    .birthday-own {
+      padding: 4px 0 10px;
+      border-bottom: 1px solid #ebeef5;
+      margin-bottom: 14px;
+    }
+    .birthday-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #303133;
+    }
+    .birthday-rows {
+      display: grid;
+      gap: 10px;
+    }
+    .birthday-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 160px 32px;
+      gap: 10px;
+      align-items: center;
     }
   }
 

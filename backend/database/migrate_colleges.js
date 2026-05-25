@@ -147,6 +147,18 @@ async function migrate() {
   }
   console.log('Seeded colleges data');
 
+  const collegeIdsBySeedIndex = {};
+  for (let i = 0; i < collegesData.length; i++) {
+    const [[college]] = await conn.execute(
+      'SELECT id FROM colleges WHERE name = ?',
+      [collegesData[i].name]
+    );
+    if (college) {
+      collegeIdsBySeedIndex[i + 1] = college.id;
+    }
+  }
+  const seededCollegeIds = Object.values(collegeIdsBySeedIndex);
+
   // 5. Seed majors data
   const majorsData = [
     // 人工智能学院 (id=1)
@@ -155,6 +167,11 @@ async function migrate() {
     { college_id: 1, name: '智能产品开发', description: '融合软硬件技术，学习嵌入式系统、物联网和智能硬件设计，培养智能产品全链路开发能力。' },
     { college_id: 1, name: '云计算技术应用', description: '学习云平台架构、容器技术和分布式系统，培养云计算运维与开发能力，适应企业数字化转型需求。' },
     { college_id: 1, name: '软件技术', description: '面向软件产业需求，系统学习软件工程、Web开发、移动应用、数据库与云服务等核心技术，培养具备软件设计、开发与项目管理能力的高素质应用型人才。' },
+    { college_id: 1, name: '软件工程', description: '系统学习软件工程理论与方法，掌握需求分析、系统设计、项目管理与质量保障的核心技能，培养具备大型软件系统规划与交付能力的工程技术人才。' },
+    { college_id: 1, name: '信息安全技术', description: '学习网络安全、密码学与系统安全的核心技术，掌握渗透测试、安全运维与应急响应能力，培养企事业单位信息安全保障与攻防实战的专业技术人才。' },
+    { college_id: 1, name: '电子信息工程', description: '学习电子电路设计、信号处理与通信系统原理，掌握嵌入式开发与智能硬件设计能力，培养电子信息产业急需的硬件开发与系统集成人才。' },
+    { college_id: 1, name: '网络工程', description: '系统学习网络架构设计、网络协议分析与网络运维技术，掌握企业网络规划、部署与安全管理能力，培养网络工程领域的专业技术人才。' },
+    { college_id: 1, name: '区块链技术', description: '学习分布式账本、共识机制与智能合约开发，掌握区块链应用设计与数字货币技术，培养金融科技与Web3领域的区块链开发与应用人才。' },
 
     // 智能制造与装备学院 (id=2)
     { college_id: 2, name: '智能制造装备技术', description: '学习数控技术、工业机器人编程与调试，培养智能产线设计、运维与优化的专业能力。' },
@@ -210,10 +227,36 @@ async function migrate() {
   ];
 
   for (const m of majorsData) {
+    const collegeId = collegeIdsBySeedIndex[m.college_id];
+    if (!collegeId) continue;
     await conn.execute(
       'INSERT IGNORE INTO majors (college_id, name, description) VALUES (?, ?, ?)',
-      [m.college_id, m.name, m.description]
+      [collegeId, m.name, m.description]
     );
+
+    const [[canonicalMajor]] = await conn.execute(
+      'SELECT id FROM majors WHERE college_id = ? AND name = ?',
+      [collegeId, m.name]
+    );
+    if (canonicalMajor && seededCollegeIds.length) {
+      const placeholders = seededCollegeIds.map(() => '?').join(',');
+      await conn.execute(
+        `UPDATE users u
+           JOIN majors bad ON u.major_id = bad.id
+            SET u.major_id = ?, u.college_id = ?
+          WHERE bad.name = ?
+            AND bad.college_id <> ?
+            AND bad.college_id IN (${placeholders})`,
+        [canonicalMajor.id, collegeId, m.name, collegeId, ...seededCollegeIds]
+      );
+      await conn.execute(
+        `DELETE FROM majors
+          WHERE name = ?
+            AND college_id <> ?
+            AND college_id IN (${placeholders})`,
+        [m.name, collegeId, ...seededCollegeIds]
+      );
+    }
   }
   console.log('Seeded majors data');
 
@@ -225,13 +268,15 @@ async function migrate() {
   // student4 (赵六) -> 生命健康学院 -> 健康管理 -> 健康管理二班
 
   // 先获取软件技术和健康管理专业的实际 id
+  const aiCollegeId = collegeIdsBySeedIndex[1] || 1;
+  const healthCollegeId = collegeIdsBySeedIndex[4] || 4;
   const [[swMajor]] = await conn.execute(
-    'SELECT id FROM majors WHERE college_id = 1 AND name = ?',
-    ['软件技术']
+    'SELECT id FROM majors WHERE college_id = ? AND name = ?',
+    [aiCollegeId, '软件技术']
   );
   const [[healthMajor]] = await conn.execute(
-    'SELECT id FROM majors WHERE college_id = 4 AND name = ?',
-    ['健康管理']
+    'SELECT id FROM majors WHERE college_id = ? AND name = ?',
+    [healthCollegeId, '健康管理']
   );
 
   const swMajorId = swMajor ? swMajor.id : 5;
@@ -245,26 +290,26 @@ async function migrate() {
 
   if (s1) {
     await conn.execute(
-      `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
-      [swMajorId, s1.id]
+      `UPDATE users SET college_id = ?, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
+      [aiCollegeId, swMajorId, s1.id]
     );
   }
   if (s2) {
     await conn.execute(
-      `UPDATE users SET college_id = 1, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
-      [swMajorId, s2.id]
+      `UPDATE users SET college_id = ?, major_id = ?, class_name = '软件技术一班' WHERE id = ?`,
+      [aiCollegeId, swMajorId, s2.id]
     );
   }
   if (s3) {
     await conn.execute(
-      `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
-      [healthMajorId, s3.id]
+      `UPDATE users SET college_id = ?, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
+      [healthCollegeId, healthMajorId, s3.id]
     );
   }
   if (s4) {
     await conn.execute(
-      `UPDATE users SET college_id = 4, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
-      [healthMajorId, s4.id]
+      `UPDATE users SET college_id = ?, major_id = ?, class_name = '健康管理二班' WHERE id = ?`,
+      [healthCollegeId, healthMajorId, s4.id]
     );
   }
   console.log('Updated existing students with college/major info');
