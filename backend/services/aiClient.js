@@ -2,7 +2,8 @@ const PROVIDERS = {
   kimi: {
     label: 'Kimi',
     baseUrl: 'https://api.moonshot.cn/v1',
-    model: 'moonshot-v1-8k'
+    model: 'moonshot-v1-8k',
+    visionModel: 'moonshot-v1-8k-vision-preview'
   },
   deepseek: {
     label: 'DeepSeek',
@@ -27,6 +28,34 @@ const getProviderDefaults = (provider) => {
   return PROVIDERS[provider] || PROVIDERS.deepseek;
 };
 
+const hasImageContent = (content) => {
+  if (!Array.isArray(content)) return false;
+  return content.some(part => part?.type === 'image_url');
+};
+
+const hasImageMessage = (messages) => {
+  return messages.some(item => hasImageContent(item.content));
+};
+
+const isVisionModel = (model = '') => {
+  const name = String(model).toLowerCase();
+  return name.includes('vision') || name.includes('visual') || name.includes('image') || name.includes('kimi-k2.5') || name.includes('kimi-latest') || name.includes('thinking');
+};
+
+const resolveModelForMessages = ({ provider, model, messages }) => {
+  const defaults = getProviderDefaults(provider);
+  const requestedModel = model || defaults.model;
+  if (!hasImageMessage(messages) || isVisionModel(requestedModel)) {
+    return requestedModel;
+  }
+
+  if (provider === 'kimi' && defaults.visionModel) {
+    return defaults.visionModel;
+  }
+
+  throw new Error('当前 AI 模型不支持识别图片，请在管理员端切换到支持图片理解的视觉模型后再试');
+};
+
 const readErrorMessage = async (response) => {
   try {
     const data = await response.json();
@@ -46,8 +75,9 @@ const callChatCompletion = async ({ provider, apiKey, model, baseUrl, messages, 
 
   const defaults = getProviderDefaults(provider);
   const url = `${normalizeBaseUrl(baseUrl || defaults.baseUrl)}/chat/completions`;
+  const resolvedModel = resolveModelForMessages({ provider, model, messages });
   const payload = {
-    model: model || defaults.model,
+    model: resolvedModel,
     messages,
     temperature,
     max_tokens: maxTokens

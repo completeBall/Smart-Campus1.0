@@ -1,8 +1,54 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const XLSX = require('xlsx');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { callChatCompletion, getProviderDefaults, maskKey } = require('../services/aiClient');
+
+const MAX_ATTACHMENT_TEXT = 6000;
+const MAX_IMAGE_DATA_URL_LENGTH = 4 * 1024 * 1024;
+const SPREADSHEET_EXTENSIONS = new Set(['xls', 'xlsx']);
+const SPREADSHEET_TYPES = new Set([
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+]);
+
+const getAttachmentExt = (name = '') => String(name).split('.').pop()?.toLowerCase() || '';
+
+const isSpreadsheetAttachment = (item) => {
+  const ext = getAttachmentExt(item.name);
+  const type = String(item.type || '').toLowerCase();
+  return SPREADSHEET_EXTENSIONS.has(ext) || SPREADSHEET_TYPES.has(type);
+};
+
+const dataUrlToBuffer = (dataUrl = '') => {
+  const match = String(dataUrl).match(/^data:[^;]+;base64,(.+)$/);
+  if (!match) return null;
+  return Buffer.from(match[1], 'base64');
+};
+
+const extractSpreadsheetText = (item) => {
+  if (!isSpreadsheetAttachment(item) || typeof item.dataUrl !== 'string' || item.dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+    return '';
+  }
+  const buffer = dataUrlToBuffer(item.dataUrl);
+  if (!buffer) return '';
+
+  try {
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    return workbook.SheetNames
+      .slice(0, 5)
+      .map((sheetName) => {
+        const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName] || {}, { blankrows: false }).trim();
+        return csv ? `# ${sheetName}\n${csv}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, MAX_ATTACHMENT_TEXT);
+  } catch (e) {
+    return '';
+  }
+};
 
 router.use(authMiddleware);
 router.use(roleMiddleware(['student']));
@@ -1305,19 +1351,65 @@ router.post('/ai/chat', async (req, res) => {
     const defaults = getProviderDefaults(row.provider);
     const incoming = Array.isArray(req.body.messages) ? req.body.messages : [];
     const userQuestion = String(req.body.question || '').trim();
+    const buildContent = (content, attachments = []) => {
+      const textParts = [];
+      const imageParts = [];
+      const plainText = typeof content === 'string'
+        ? content.trim()
+        : Array.isArray(content)
+          ? content.filter(part => part?.type === 'text').map(part => part.text || '').join('\n').trim()
+          : '';
+
+      if (plainText) textParts.push(plainText.slice(0, 2000));
+
+      for (const item of Array.isArray(attachments) ? attachments.slice(0, 6) : []) {
+        const name = String(item.name || '未命名文件').slice(0, 120);
+        const type = String(item.type || 'application/octet-stream').slice(0, 80);
+        const kind = item.kind || (type.startsWith('image/') ? 'image' : 'file');
+
+        if (kind === 'image' && typeof item.dataUrl === 'string' && item.dataUrl.startsWith('data:image/') && item.dataUrl.length <= MAX_IMAGE_DATA_URL_LENGTH) {
+          imageParts.push({
+            type: 'image_url',
+            image_url: { url: item.dataUrl }
+          });
+          textParts.push(`[图片附件: ${name}]`);
+          continue;
+        }
+
+        const spreadsheetText = extractSpreadsheetText(item);
+        if (spreadsheetText) {
+          textParts.push(`\n[表格文件: ${name} | ${type}]\n${spreadsheetText}`);
+        } else if (typeof item.text === 'string' && item.text.trim()) {
+          textParts.push(`\n[文件: ${name} | ${type}]\n${item.text.slice(0, MAX_ATTACHMENT_TEXT)}`);
+        } else {
+          textParts.push(`[文件附件: ${name} | ${type}，当前仅提供文件信息，请根据用户描述回答]`);
+        }
+      }
+
+      const finalText = textParts.join('\n\n').trim();
+      if (imageParts.length === 0) return finalText;
+      return [
+        { type: 'text', text: finalText || '请分析附件内容。' },
+        ...imageParts
+      ];
+    };
+
     const normalized = incoming
-      .filter(item => ['user', 'assistant'].includes(item.role) && String(item.content || '').trim())
+      .filter(item => ['user', 'assistant'].includes(item.role) && (String(item.content || '').trim() || (Array.isArray(item.attachments) && item.attachments.length > 0)))
       .slice(-12)
       .map(item => ({
         role: item.role,
-        content: String(item.content).slice(0, 2000)
-      }));
+        content: item.role === 'user'
+          ? buildContent(item.content, item.attachments)
+          : String(item.content || '').slice(0, 2000)
+      }))
+      .filter(item => item.content && (typeof item.content !== 'string' || item.content.trim()));
 
     if (userQuestion) {
-      normalized.push({ role: 'user', content: userQuestion.slice(0, 2000) });
+      normalized.push({ role: 'user', content: buildContent(userQuestion, req.body.attachments) });
     }
     if (normalized.length === 0) {
-      return res.json({ code: 400, message: '请输入要咨询的问题' });
+      return res.json({ code: 400, message: '请输入要咨询的问题或上传附件' });
     }
 
     const messages = [
