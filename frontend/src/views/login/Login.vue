@@ -217,15 +217,47 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: none;
+  box-shadow: none;
 }
 
 .glass-card {
   width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 56px 48px 44px;
+  border-radius: 0;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 45px rgba(29, 36, 90, 0.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.42), transparent 28%),
+      linear-gradient(120deg, rgba(255, 255, 255, 0.24), transparent 34%);
+    opacity: 0.75;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .login-header {

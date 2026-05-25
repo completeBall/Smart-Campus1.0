@@ -61,6 +61,8 @@ import { ElMessage } from 'element-plus'
 import { playGame, getTodayGames } from '@/api/student'
 
 const SIZE = 15
+const PLAYER = 1
+const AI = 2
 const level = ref('easy')
 const board = ref(Array(SIZE * SIZE).fill(0)) // 0空 1黑(玩家) 2白(AI)
 const turn = ref('black')
@@ -154,10 +156,11 @@ const aiMove = () => {
 
 // AI 决策:打分模型 + 难度系数
 const chooseAiMove = () => {
-  const candidates = []
-  for (let i = 0; i < SIZE * SIZE; i++) {
-    if (board.value[i] !== 0) continue
-    if (!hasNeighbor(i, 2)) continue
+  if (level.value === 'hard') return chooseHardMove()
+
+  const candidates = getCandidates(2)
+  for (const item of candidates) {
+    const i = item.i
     const attackScore = scoreAt(i, 2)
     const defendScore = scoreAt(i, 1)
     let total
@@ -169,7 +172,9 @@ const chooseAiMove = () => {
     } else {
       total = attackScore * 1.05 + defendScore * 1.0
     }
-    candidates.push({ i, total, attackScore, defendScore })
+    item.total = total
+    item.attackScore = attackScore
+    item.defendScore = defendScore
   }
   if (candidates.length === 0) {
     // 第一手:落天元附近
@@ -185,10 +190,132 @@ const chooseAiMove = () => {
   return candidates[0].i
 }
 
+const chooseHardMove = () => {
+  const candidates = getCandidates(2)
+  if (candidates.length === 0) {
+    const center = Math.floor(SIZE / 2) * SIZE + Math.floor(SIZE / 2)
+    return board.value[center] === 0 ? center : board.value.findIndex(c => c === 0)
+  }
+
+  const aiWins = candidates.filter(({ i }) => isWinningMove(i, AI))
+  if (aiWins.length) return bestByHardScore(aiWins, AI).i
+
+  const playerWins = candidates.filter(({ i }) => isWinningMove(i, PLAYER))
+  if (playerWins.length) return bestByHardScore(playerWins, PLAYER).i
+
+  const scored = candidates.map(({ i }) => {
+    const attack = tacticalScoreAt(i, AI)
+    const defend = tacticalScoreAt(i, PLAYER)
+    const base = attack * 1.18 + defend * 1.35 + centerBonus(i)
+
+    board.value[i] = AI
+    const playerImmediateWins = countWinningMoves(PLAYER)
+    const aiFollowWins = countWinningMoves(AI)
+    const playerReply = bestReplyScore(PLAYER, 8)
+    const aiNext = bestReplyScore(AI, 6)
+    board.value[i] = 0
+
+    const dangerPenalty = playerImmediateWins * 900000
+    const forkBonus = aiFollowWins >= 2 ? 650000 : aiFollowWins * 160000
+    const total = base + forkBonus + aiNext * 0.28 - playerReply * 0.72 - dangerPenalty
+
+    return { i, total, attack, defend, playerImmediateWins, aiFollowWins }
+  })
+
+  scored.sort((a, b) => b.total - a.total)
+  return scored[0].i
+}
+
+const getCandidates = (radius = 2) => {
+  const candidates = []
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    if (board.value[i] !== 0) continue
+    if (!hasNeighbor(i, radius)) continue
+    candidates.push({ i })
+  }
+  return candidates
+}
+
+const bestByHardScore = (moves, player) => {
+  return moves
+    .map(({ i }) => ({ i, total: tacticalScoreAt(i, player) + centerBonus(i) }))
+    .sort((a, b) => b.total - a.total)[0]
+}
+
+const isWinningMove = (idx, player) => {
+  board.value[idx] = player
+  const winNow = checkWinAt(idx, player)
+  board.value[idx] = 0
+  return winNow
+}
+
+const countWinningMoves = (player) => {
+  return getCandidates(2).filter(({ i }) => isWinningMove(i, player)).length
+}
+
+const bestReplyScore = (player, limit = 8) => {
+  return getCandidates(2)
+    .map(({ i }) => ({ i, score: tacticalScoreAt(i, player) + scoreAt(i, player) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .reduce((best, item) => Math.max(best, item.score), 0)
+}
+
+const tacticalScoreAt = (idx, player) => {
+  const r = Math.floor(idx / SIZE), c = idx % SIZE
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]]
+  let total = scoreAt(idx, player)
+  for (const [dr, dc] of dirs) {
+    total += patternScore(buildLinePattern(r, c, dr, dc, player))
+  }
+  return total
+}
+
+const buildLinePattern = (r, c, dr, dc, player) => {
+  const chars = []
+  for (let offset = -4; offset <= 4; offset++) {
+    const nr = r + dr * offset
+    const nc = c + dc * offset
+    if (offset === 0) {
+      chars.push('1')
+    } else if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) {
+      chars.push('2')
+    } else {
+      const cell = board.value[nr * SIZE + nc]
+      chars.push(cell === 0 ? '0' : cell === player ? '1' : '2')
+    }
+  }
+  return chars.join('')
+}
+
+const patternScore = (line) => {
+  if (line.includes('11111')) return 1200000
+  let score = 0
+  const addIf = (patterns, value) => {
+    if (patterns.some(pattern => line.includes(pattern))) score += value
+  }
+
+  addIf(['011110'], 260000) // 活四
+  addIf(['011112', '211110', '11110', '01111', '11011', '10111', '11101'], 90000) // 冲四/跳四
+  addIf(['011100', '001110', '010110', '011010'], 26000) // 活三/跳三
+  addIf(['211100', '001112', '010112', '211010'], 6500) // 眠三
+  addIf(['001100', '001010', '010100', '010010'], 1600) // 活二
+  addIf(['0001000'], 220)
+  return score
+}
+
+const centerBonus = (idx) => {
+  const r = Math.floor(idx / SIZE), c = idx % SIZE
+  const center = Math.floor(SIZE / 2)
+  const dist = Math.abs(r - center) + Math.abs(c - center)
+  return Math.max(0, 28 - dist * 3)
+}
+
 const hasNeighbor = (idx, _player) => {
   const r = Math.floor(idx / SIZE), c = idx % SIZE
-  for (let dr = -2; dr <= 2; dr++) {
-    for (let dc = -2; dc <= 2; dc++) {
+  const radius = typeof _player === 'number' ? _player : 2
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
       if (dr === 0 && dc === 0) continue
       const nr = r + dr, nc = c + dc
       if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
