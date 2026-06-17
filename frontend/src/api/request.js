@@ -34,7 +34,9 @@ request.interceptors.response.use(
         window.location.href = '/login'
         return Promise.reject(new Error(res.message))
       }
-      ElMessage.error(res.message || '请求失败')
+      if (!response.config.silent) {
+        ElMessage.error(res.message || '请求失败')
+      }
       return Promise.reject(new Error(res.message))
     }
     return res
@@ -51,7 +53,7 @@ request.interceptors.response.use(
       return Promise.reject(error)
     }
     // 登录页不弹网络错误，避免刷屏
-    if (!isLoginPage) {
+    if (!isLoginPage && !error.config?.silent) {
       let msg = error.message || '网络错误'
       if (msg === 'Network Error') msg = '网络连接失败，请检查后端服务是否启动'
       if (msg.includes('timeout')) msg = '请求超时，请稍后重试'

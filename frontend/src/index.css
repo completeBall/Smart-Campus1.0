@@ -1,0 +1,788 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Microsoft YaHei", sans-serif;
+  --font-display: "Outfit", "Microsoft YaHei", sans-serif;
+}
+
+:root {
+  --campus-ink: #0a152d;
+  --campus-blue: #123e81;
+  --campus-blue-soft: #eaf1fb;
+  --campus-surface: #ffffff;
+  --campus-border: #e2e8f0;
+  --campus-page: #f9fafb;
+  --campus-text: #0a1b33;
+  --campus-muted: #64748b;
+
+  --el-color-primary: #0a152d;
+  --el-color-primary-light-3: #36415a;
+  --el-color-primary-light-5: #6f7789;
+  --el-color-primary-light-7: #a6abb5;
+  --el-color-primary-light-8: #c3c6cd;
+  --el-color-primary-light-9: #eef0f3;
+  --el-color-primary-dark-2: #071020;
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 10px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --campus-ink: #dbeafe;
+  --campus-blue: #7fb0ff;
+  --campus-blue-soft: #172b49;
+  --campus-surface: #111827;
+  --campus-border: #2a3a50;
+  --campus-page: #090f1b;
+  --campus-text: #e5edf8;
+  --campus-muted: #94a3b8;
+
+  --el-bg-color: #111827;
+  --el-bg-color-page: #090f1b;
+  --el-bg-color-overlay: #172033;
+  --el-fill-color-blank: #111827;
+  --el-fill-color-light: #172033;
+  --el-fill-color-lighter: #1b2638;
+  --el-fill-color-extra-light: #202c3e;
+  --el-border-color: #2a3a50;
+  --el-border-color-light: #26364b;
+  --el-border-color-lighter: #223044;
+  --el-text-color-primary: #e5edf8;
+  --el-text-color-regular: #c2cede;
+  --el-text-color-secondary: #94a3b8;
+  --el-text-color-placeholder: #68778c;
+  --el-color-primary: #7fb0ff;
+  --el-color-primary-light-9: #172b49;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes soft-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+html {
+  background: var(--campus-page);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--campus-page);
+  color: var(--campus-text);
+  font-family: var(--font-sans);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.el-button {
+  min-height: 38px;
+  padding: 8px 18px;
+  border-color: var(--campus-border);
+  border-radius: 999px;
+  color: #475569;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: transform 180ms ease, color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.el-button:not(.is-disabled):hover {
+  color: var(--campus-ink);
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.el-button--primary:not(.is-link):not(.is-text):not(.is-circle),
+.el-button--primary:not(.is-plain):not(.is-link):not(.is-text):not(.is-circle) {
+  color: #334155;
+  border-color: var(--campus-border);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.el-button--primary:not(.is-link):not(.is-text):not(.is-circle) > .el-icon {
+  width: 22px;
+  height: 22px;
+  margin-left: -9px;
+  margin-right: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--campus-blue);
+  border-radius: 50%;
+  background: var(--campus-blue-soft);
+}
+
+.el-button--primary:not(.is-link):not(.is-text):not(.is-circle):not(.is-disabled):hover,
+.el-button--primary:not(.is-link):not(.is-text):not(.is-circle):not(.is-disabled):focus {
+  color: var(--campus-ink);
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.08);
+}
+
+.el-button--primary.is-plain {
+  color: var(--campus-blue);
+  border-color: #cbd9ed;
+  background: #f5f8fc;
+  box-shadow: none;
+}
+
+.el-button--primary.is-disabled:not(.is-link):not(.is-text):not(.is-circle) {
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.el-button.is-circle {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 !important;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  border-radius: 50% !important;
+  line-height: 1;
+}
+
+.el-button.is-circle.el-button--small {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  flex-basis: 32px;
+}
+
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--campus-border) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px #94a3b8 inset, 0 0 0 4px #f1f5f9;
+}
+
+.el-pagination.is-background .el-pager li.is-active,
+.el-switch.is-checked .el-switch__core {
+  border-color: var(--campus-ink);
+  background: var(--campus-ink);
+}
+
+.el-tabs__active-bar {
+  background: var(--campus-ink);
+}
+
+.el-tabs__item.is-active,
+.el-tabs__item:hover,
+.el-link.el-link--primary {
+  color: var(--campus-blue);
+}
+
+.el-radio-button__inner {
+  color: #475569;
+  border-color: var(--campus-border);
+  background: #fff;
+  box-shadow: none;
+}
+
+.el-radio-button:first-child .el-radio-button__inner {
+  border-left-color: var(--campus-border);
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  color: var(--campus-text) !important;
+  border-color: #cbd9ed !important;
+  background: var(--campus-blue-soft) !important;
+  box-shadow: -1px 0 0 0 #cbd9ed !important;
+  font-weight: 600;
+}
+
+.el-radio-button__inner:hover {
+  color: var(--campus-blue);
+}
+
+.el-dialog,
+.el-card {
+  border-radius: 22px;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] #app,
+:root[data-theme="dark"] .layout,
+:root[data-theme="dark"] .main-content {
+  background: var(--campus-page) !important;
+  color: var(--campus-text);
+}
+
+:root[data-theme="dark"] .sidebar,
+:root[data-theme="dark"] .header,
+:root[data-theme="dark"] .el-card,
+:root[data-theme="dark"] .el-dialog,
+:root[data-theme="dark"] .el-drawer,
+:root[data-theme="dark"] .el-message-box,
+:root[data-theme="dark"] .el-dropdown-menu,
+:root[data-theme="dark"] .el-popper.is-light {
+  color: var(--campus-text);
+  border-color: var(--campus-border) !important;
+  background: var(--campus-surface) !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme="dark"] .el-overlay {
+  background-color: rgba(0, 0, 0, 0.58) !important;
+}
+
+:root[data-theme="dark"] .el-message-box {
+  --el-messagebox-title-color: #eef4fc;
+  --el-messagebox-content-color: #a9b7ca;
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .el-message-box__header,
+:root[data-theme="dark"] .el-message-box__btns {
+  border-color: var(--campus-border) !important;
+  background: #111827 !important;
+}
+
+:root[data-theme="dark"] .el-message-box__content {
+  color: #a9b7ca !important;
+  background: #111827 !important;
+}
+
+:root[data-theme="dark"] .el-message-box__title,
+:root[data-theme="dark"] .el-message-box__message,
+:root[data-theme="dark"] .el-message-box__message p {
+  color: #dbeafe !important;
+}
+
+:root[data-theme="dark"] .el-message-box__status {
+  color: #fbbf24 !important;
+}
+
+:root[data-theme="dark"] .el-message-box__close {
+  color: #9fb0c5 !important;
+}
+
+:root[data-theme="dark"] .el-message-box__btns .el-button {
+  color: #dce8f7 !important;
+  border-color: #354b67 !important;
+  background: #17263b !important;
+}
+
+:root[data-theme="dark"] .el-message-box__btns .el-button--primary {
+  color: #eef6ff !important;
+  border-color: #31547f !important;
+  background: #1b3557 !important;
+}
+
+:root[data-theme="dark"] .header {
+  background: rgba(9, 15, 27, 0.88) !important;
+}
+
+:root[data-theme="dark"] .logo,
+:root[data-theme="dark"] .el-card__header,
+:root[data-theme="dark"] .el-dialog__header,
+:root[data-theme="dark"] .el-table th.el-table__cell {
+  border-color: var(--campus-border) !important;
+  background: #121c2c !important;
+}
+
+:root[data-theme="dark"] .logo-copy span,
+:root[data-theme="dark"] .user-name,
+:root[data-theme="dark"] .card-title,
+:root[data-theme="dark"] .el-card__header,
+:root[data-theme="dark"] .el-dialog__title,
+:root[data-theme="dark"] .el-breadcrumb__inner {
+  color: var(--campus-text) !important;
+}
+
+:root[data-theme="dark"] .logo-mark {
+  border-color: var(--campus-border) !important;
+  background: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .sidebar-menu,
+:root[data-theme="dark"] .el-menu {
+  background: transparent !important;
+}
+
+:root[data-theme="dark"] .sidebar-menu .el-menu-item {
+  color: #9babc0 !important;
+}
+
+:root[data-theme="dark"] .sidebar-menu .el-menu-item:hover,
+:root[data-theme="dark"] .sidebar-menu .el-menu-item.is-active {
+  color: #e5edf8 !important;
+  border-color: #2d4565 !important;
+  background: #17263b !important;
+}
+
+:root[data-theme="dark"] .el-input__wrapper,
+:root[data-theme="dark"] .el-select__wrapper,
+:root[data-theme="dark"] .el-textarea__inner,
+:root[data-theme="dark"] .el-button,
+:root[data-theme="dark"] .el-radio-button__inner {
+  color: #cbd5e1;
+  border-color: var(--campus-border) !important;
+  background: #111b2a !important;
+}
+
+:root[data-theme="dark"] .el-button:hover {
+  color: #fff;
+  border-color: #405775 !important;
+  background: #18263a !important;
+}
+
+:root[data-theme="dark"] .el-radio-button__original-radio:checked + .el-radio-button__inner {
+  color: #eef6ff !important;
+  border-color: #41648f !important;
+  background: #1b3557 !important;
+  box-shadow: -1px 0 0 0 #41648f !important;
+}
+
+:root[data-theme="dark"] .el-table,
+:root[data-theme="dark"] .el-table tr,
+:root[data-theme="dark"] .el-table td.el-table__cell,
+:root[data-theme="dark"] .el-calendar,
+:root[data-theme="dark"] .el-collapse-item__wrap,
+:root[data-theme="dark"] .el-collapse-item__header {
+  color: var(--campus-text);
+  border-color: var(--campus-border) !important;
+  background: var(--campus-surface) !important;
+}
+
+:root[data-theme="dark"] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+:root[data-theme="dark"] .el-table__body tr:hover > td.el-table__cell {
+  background: #172033 !important;
+}
+
+:root[data-theme="dark"] .el-empty__description p,
+:root[data-theme="dark"] .el-form-item__label,
+:root[data-theme="dark"] .el-calendar__title {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .status-card,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .memo-card,
+:root[data-theme="dark"] .memo-board,
+:root[data-theme="dark"] .summary-item,
+:root[data-theme="dark"] .memo-item,
+:root[data-theme="dark"] .apply-card,
+:root[data-theme="dark"] .record-card,
+:root[data-theme="dark"] .record-item,
+:root[data-theme="dark"] .task-card,
+:root[data-theme="dark"] .score-board,
+:root[data-theme="dark"] .major-card,
+:root[data-theme="dark"] .chat-shell,
+:root[data-theme="dark"] .chat-sidebar,
+:root[data-theme="dark"] .chat-main,
+:root[data-theme="dark"] .composer,
+:root[data-theme="dark"] .post-item,
+:root[data-theme="dark"] .feedback-item,
+:root[data-theme="dark"] .leave-item,
+:root[data-theme="dark"] .task-item {
+  border-color: var(--campus-border) !important;
+  background: var(--campus-surface) !important;
+}
+
+:root[data-theme="dark"] .messages-area,
+:root[data-theme="dark"] .record-body,
+:root[data-theme="dark"] .memo-empty,
+:root[data-theme="dark"] .el-calendar-table td,
+:root[data-theme="dark"] .el-calendar-table .el-calendar-day {
+  border-color: var(--campus-border) !important;
+  background: #0d1625 !important;
+}
+
+:root[data-theme="dark"] .summary-item,
+:root[data-theme="dark"] .feedback-reply,
+:root[data-theme="dark"] .record-reply,
+:root[data-theme="dark"] .college-desc,
+:root[data-theme="dark"] .el-alert--info.is-light {
+  color: #bdc9d9 !important;
+  border-color: #263b58 !important;
+  background: #14243a !important;
+}
+
+:root[data-theme="dark"] .memo-title,
+:root[data-theme="dark"] .stat-value,
+:root[data-theme="dark"] .task-header h4,
+:root[data-theme="dark"] .post-title,
+:root[data-theme="dark"] .feedback-title,
+:root[data-theme="dark"] .excellent-name,
+:root[data-theme="dark"] .slot-label {
+  color: var(--campus-text) !important;
+}
+
+:root[data-theme="dark"] .task-content,
+:root[data-theme="dark"] .post-preview,
+:root[data-theme="dark"] .feedback-content,
+:root[data-theme="dark"] .memo-content,
+:root[data-theme="dark"] .major-desc,
+:root[data-theme="dark"] .slot-range {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .el-radio-group {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--campus-border);
+}
+
+:root[data-theme="dark"] .el-radio-button__inner {
+  border-color: transparent !important;
+}
+
+/* Chat: keep both sides readable without bright message cards. */
+:root[data-theme="dark"] .chat-page .sidebar-tabs,
+:root[data-theme="dark"] .chat-page .conv-list,
+:root[data-theme="dark"] .chat-page .chat-header,
+:root[data-theme="dark"] .chat-page .composer {
+  color: var(--campus-text) !important;
+  border-color: var(--campus-border) !important;
+  background: #101a2a !important;
+}
+
+:root[data-theme="dark"] .chat-page .tab.active,
+:root[data-theme="dark"] .chat-page .conv-item.active {
+  color: #e8f1ff !important;
+  background: #1a2b43 !important;
+}
+
+:root[data-theme="dark"] .chat-page .conv-item:hover {
+  background: #16243a !important;
+}
+
+:root[data-theme="dark"] .chat-page .message-bubble {
+  color: #d8e2f0 !important;
+  border-color: #2b3c53 !important;
+  background: #172235 !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18) !important;
+}
+
+:root[data-theme="dark"] .chat-page .message-row.mine .message-bubble {
+  color: #eef6ff !important;
+  border-color: #31547f !important;
+  background: #1b3557 !important;
+}
+
+/* Classmates: the statistics strip should follow the card surface. */
+:root[data-theme="dark"] .classmates-page .stats-bar {
+  border: 1px solid var(--campus-border) !important;
+  background: #142033 !important;
+}
+
+:root[data-theme="dark"] .classmates-page .el-statistic__head {
+  color: #91a2b8 !important;
+}
+
+:root[data-theme="dark"] .classmates-page .el-statistic__content,
+:root[data-theme="dark"] .classmates-page .classmate-info .name {
+  color: var(--campus-text) !important;
+}
+
+/* Smart AI: replace the page-local white gradients and panels. */
+:root[data-theme="dark"] .smart-ai-page .ai-side,
+:root[data-theme="dark"] .smart-ai-page .chat-panel,
+:root[data-theme="dark"] .smart-ai-page .agent-side {
+  color: var(--campus-text) !important;
+  border-color: var(--campus-border) !important;
+  background: #111827 !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .brand {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(34, 197, 94, 0.12)) !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .usage-box,
+:root[data-theme="dark"] .smart-ai-page .quick-list button,
+:root[data-theme="dark"] .smart-ai-page .message-box,
+:root[data-theme="dark"] .smart-ai-page .input-bar,
+:root[data-theme="dark"] .smart-ai-page .usage-detail,
+:root[data-theme="dark"] .smart-ai-page .trace-summary,
+:root[data-theme="dark"] .smart-ai-page .agent-tool-list,
+:root[data-theme="dark"] .smart-ai-page .trace-item,
+:root[data-theme="dark"] .smart-ai-page .message-file {
+  color: #d6e0ed !important;
+  border-color: var(--campus-border) !important;
+  background: #142033 !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .message-stage {
+  border-color: var(--campus-border) !important;
+  background: radial-gradient(circle at 50% 12%, rgba(59, 130, 246, 0.1), transparent 28%), #0d1625 !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .panel-switch {
+  background: #0d1625 !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .panel-switch button.active {
+  color: #eef6ff !important;
+  background: #1b3557 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page h2,
+:root[data-theme="dark"] .smart-ai-page h3,
+:root[data-theme="dark"] .smart-ai-page strong,
+:root[data-theme="dark"] .smart-ai-page .bubble,
+:root[data-theme="dark"] .smart-ai-page .empty-chat h3 {
+  color: var(--campus-text) !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page p,
+:root[data-theme="dark"] .smart-ai-page span,
+:root[data-theme="dark"] .smart-ai-page .empty-chat p {
+  color: #9babc0;
+}
+
+/* Schedule: remove the white header and time rail in dark mode. */
+:root[data-theme="dark"] .schedule-page .schedule-grid,
+:root[data-theme="dark"] .schedule-page .schedule-header,
+:root[data-theme="dark"] .schedule-page .schedule-header .time-col,
+:root[data-theme="dark"] .schedule-page .schedule-header .day-col,
+:root[data-theme="dark"] .schedule-page .schedule-body .time-col,
+:root[data-theme="dark"] .schedule-page .schedule-body .day-cell {
+  color: var(--campus-text) !important;
+  border-color: #35445a !important;
+  background: #121c2c !important;
+}
+
+:root[data-theme="dark"] .schedule-page .schedule-header .day-col.today {
+  color: #eef6ff !important;
+  background: #1a2b43 !important;
+}
+
+:root[data-theme="dark"] .schedule-page .schedule-body .time-row.evening .time-col {
+  background: #292416 !important;
+}
+
+:root[data-theme="dark"] .schedule-page .class-tag,
+:root[data-theme="dark"] .schedule-page .today-tag {
+  color: #dceaff !important;
+  border-color: #36577d !important;
+  background: #1a304d !important;
+}
+
+:root[data-theme="dark"] .colleges-page .college-name,
+:root[data-theme="dark"] .colleges-page .major-header,
+:root[data-theme="dark"] .colleges-page .major-name {
+  color: #e8f1ff !important;
+}
+
+:root[data-theme="dark"] .colleges-page .major-header .el-icon {
+  color: #8abaff !important;
+  background: #1b3557 !important;
+}
+
+:root[data-theme="dark"] .weather-pill {
+  color: #eef6ff !important;
+  border-color: #2c405c !important;
+  background: #121c2c !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18) !important;
+}
+
+:root[data-theme="dark"] .weather-pill .weather-icon {
+  background: #1a2b43 !important;
+}
+
+:root[data-theme="dark"] .weather-pill small {
+  color: #9babc0 !important;
+}
+
+:root[data-theme="dark"] .dashboard .calendar-cell:hover,
+:root[data-theme="dark"] .dashboard .calendar-cell.is-today,
+:root[data-theme="dark"] .dashboard .el-calendar-table td.is-selected .calendar-cell {
+  color: #eef6ff !important;
+  background: #1a2b43 !important;
+  box-shadow: inset 0 0 0 1px #304966 !important;
+}
+
+:root[data-theme="dark"] .dashboard .calendar-cell.is-holiday {
+  background: linear-gradient(145deg, rgba(127, 59, 45, 0.42), rgba(88, 42, 55, 0.42)) !important;
+  box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.22) !important;
+}
+
+:root[data-theme="dark"] .dashboard .calendar-cell .holiday-icon {
+  border-color: rgba(251, 113, 133, 0.26) !important;
+  background: #2b2030 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .dashboard .cell-holiday-name {
+  color: #fda4af !important;
+}
+
+/* Activities: page-local #333/#666 colors need explicit dark contrast. */
+:root[data-theme="dark"] .activities-page .section-title,
+:root[data-theme="dark"] .activities-page .permanent-info h4,
+:root[data-theme="dark"] .activities-page .activity-title,
+:root[data-theme="dark"] .activities-page .card-title {
+  color: #eef4fc !important;
+}
+
+:root[data-theme="dark"] .activities-page .permanent-info p,
+:root[data-theme="dark"] .activities-page .activity-desc,
+:root[data-theme="dark"] .activities-page .activity-meta,
+:root[data-theme="dark"] .activities-page .activity-meta .meta-item,
+:root[data-theme="dark"] .activities-page .activity-footer .organizer,
+:root[data-theme="dark"] .activities-page .my-score {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .activities-page .permanent-card,
+:root[data-theme="dark"] .activities-page .activity-card {
+  border-color: var(--campus-border) !important;
+  background: #111b2b !important;
+}
+
+/* Smart AI header was still using its local white gradient. */
+:root[data-theme="dark"] .smart-ai-page .chat-head,
+:root[data-theme="dark"] .smart-ai-page .agent-side-head {
+  color: var(--campus-text) !important;
+  border-color: var(--campus-border) !important;
+  background: #111827 !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .chat-head h3,
+:root[data-theme="dark"] .smart-ai-page .agent-side-head h3 {
+  color: #eef4fc !important;
+}
+
+:root[data-theme="dark"] .smart-ai-page .chat-head span,
+:root[data-theme="dark"] .smart-ai-page .agent-side-head span {
+  color: #9fb0c5 !important;
+}
+
+/* Dashboard status copy and actions. */
+:root[data-theme="dark"] .dashboard .status-card .status-msg,
+:root[data-theme="dark"] .dashboard .status-card .empty-title {
+  color: #eef4fc !important;
+}
+
+:root[data-theme="dark"] .dashboard .status-card .status-meta,
+:root[data-theme="dark"] .dashboard .status-card .empty-tip {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .dashboard .status-card .status-actions .el-button {
+  color: #dce8f7 !important;
+  border-color: #354b67 !important;
+  background: #17263b !important;
+}
+
+:root[data-theme="dark"] .dashboard .status-card .status-actions .el-button:hover {
+  color: #fff !important;
+  border-color: #4c6c92 !important;
+  background: #1c304b !important;
+}
+
+:root[data-theme="dark"] .youth-page .map-card,
+:root[data-theme="dark"] .youth-page .story-card,
+:root[data-theme="dark"] .youth-page .story-item {
+  color: var(--campus-text) !important;
+  border-color: var(--campus-border) !important;
+  background: var(--campus-surface) !important;
+}
+
+:root[data-theme="dark"] .youth-page .map-title,
+:root[data-theme="dark"] .youth-page .story-title,
+:root[data-theme="dark"] .youth-page .city-placeholder h3,
+:root[data-theme="dark"] .youth-page .city-summary strong,
+:root[data-theme="dark"] .youth-page .story-item header strong,
+:root[data-theme="dark"] .youth-page .publish-location strong,
+:root[data-theme="dark"] .youth-page .upload-title {
+  color: #eef4fc !important;
+}
+
+:root[data-theme="dark"] .youth-page .map-head small,
+:root[data-theme="dark"] .youth-page .story-head small,
+:root[data-theme="dark"] .youth-page .city-placeholder p,
+:root[data-theme="dark"] .youth-page .city-summary span,
+:root[data-theme="dark"] .youth-page .story-item p,
+:root[data-theme="dark"] .youth-page .map-foot {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .youth-page .story-source,
+:root[data-theme="dark"] .youth-page .story-item header {
+  color: #9fb0c5 !important;
+}
+
+:root[data-theme="dark"] .youth-page .map-stage,
+:root[data-theme="dark"] .youth-page .map-loading,
+:root[data-theme="dark"] .youth-page .map-error,
+:root[data-theme="dark"] .youth-page .city-summary,
+:root[data-theme="dark"] .youth-page .publish-location {
+  color: #cbd8e8 !important;
+  border-color: #2b405c !important;
+  background: #0d1625 !important;
+}
+
+:root[data-theme="dark"] .youth-page .compass {
+  background: linear-gradient(145deg, #17263b, #1b3557) !important;
+}
+
+.marquee-track {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+
+.marquee-shell:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation-play-state: paused;
+  }
+}

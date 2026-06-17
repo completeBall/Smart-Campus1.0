@@ -232,7 +232,7 @@ onMounted(loadData)
 .forum-detail {
   .back-btn {
     margin-bottom: 16px;
-    color: #667eea;
+    color: #123e81;
   }
   .post-card {
     margin-bottom: 20px;
@@ -374,7 +374,7 @@ onMounted(loadData)
             margin-bottom: 6px;
             .reply-author {
               font-weight: 600;
-              color: #667eea;
+              color: #123e81;
               font-size: 14px;
             }
             .reply-time {

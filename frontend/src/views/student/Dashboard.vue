@@ -1,6 +1,9 @@
 <template>
   <div class="dashboard">
     <div class="welcome-banner">
+      <span class="banner-orb banner-orb-one" aria-hidden="true"></span>
+      <span class="banner-orb banner-orb-two" aria-hidden="true"></span>
+      <span class="banner-shine" aria-hidden="true"></span>
       <div class="welcome-text">
         <h2>欢迎回来，{{ userStore.userInfo.name }} 👋</h2>
         <p>今天是 {{ today }}，祝你学习愉快！</p>
@@ -105,9 +108,11 @@
                 <el-icon><Calendar /></el-icon>
                 学习日历
               </span>
-              <el-button link type="primary" @click="openBirthdayDialog">
-                <el-icon><Plus /></el-icon>
-                生日设置
+              <el-button class="birthday-settings-button" @click="openBirthdayDialog">
+                <span class="birthday-settings-icon">
+                  <el-icon><Plus /></el-icon>
+                </span>
+                <span>生日设置</span>
               </el-button>
             </div>
           </template>
@@ -116,7 +121,7 @@
               <div class="calendar-cell" :class="getCalendarCellClass(data)">
                 <span class="cell-day">{{ data.day.split('-')[2] }}</span>
                 <span v-if="getHoliday(data)" class="cell-holiday" :title="getHoliday(data).name">
-                  {{ getHoliday(data).emoji }}
+                  <span class="holiday-icon">{{ getHoliday(data).emoji }}</span>
                 </span>
                 <div v-if="getCalendarDateClass(data)" class="cell-dots">
                   <span v-if="getCalendarDateClass(data).includes('task')" class="dot task"></span>
@@ -377,8 +382,8 @@ const today = computed(() => dayjs().format('YYYY年MM月DD日 dddd'))
 const logoUrl = '/logo.png'
 const logoFailed = ref(false)
 const stats = ref([
-  { title: '我的任务', value: 0, icon: 'Document', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { title: '已提交', value: 0, icon: 'CircleCheck', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  { title: '我的任务', value: 0, icon: 'Document', gradient: 'linear-gradient(135deg, #123e81 0%, #0a152d 100%)' },
+  { title: '已提交', value: 0, icon: 'CircleCheck', gradient: 'linear-gradient(135deg, #38bdf8 0%, #f5576c 100%)' },
   { title: '新通知', value: 0, icon: 'Bell', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }
 ])
 const pendingTasks = ref([])
@@ -718,7 +723,7 @@ const memoColors = [
   { value: 'pink',   label: '粉色', color: '#f5576c' },
   { value: 'green',  label: '绿色', color: '#42b983' },
   { value: 'yellow', label: '黄色', color: '#f6a609' },
-  { value: 'purple', label: '紫色', color: '#9b6dff' }
+  { value: 'purple', label: '海蓝', color: '#3b82f6' }
 ]
 
 const memoKey = computed(() => `dashboard_memos_${userStore.userInfo.id || 'anon'}`)
@@ -815,7 +820,8 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .dashboard {
   .welcome-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(120deg, #123e81 0%, #0a2b62 38%, #0a152d 72%, #123e81 100%);
+    background-size: 240% 240%;
     border-radius: 16px;
     padding: 30px 40px;
     display: flex;
@@ -825,18 +831,90 @@ onBeforeUnmount(() => {
     color: #fff;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+    isolation: isolate;
+    box-shadow: 0 16px 38px rgba(10, 21, 45, 0.2);
+    animation: banner-gradient 12s ease-in-out infinite, banner-enter 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: transform 300ms ease, box-shadow 300ms ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 48px rgba(10, 21, 45, 0.26);
+    }
 
     &::before {
       content: '';
       position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 320px;
-      height: 320px;
-      background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
-      border-radius: 50%;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(90deg, black, transparent 88%);
       pointer-events: none;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 42%);
+      pointer-events: none;
+    }
+
+    .banner-orb {
+      position: absolute;
+      z-index: -1;
+      border-radius: 50%;
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .banner-orb-one {
+      top: -150px;
+      right: 7%;
+      width: 330px;
+      height: 330px;
+      background: radial-gradient(circle, rgba(76, 151, 255, 0.32) 0%, rgba(76, 151, 255, 0) 68%);
+      animation: orb-float-one 8s ease-in-out infinite alternate;
+    }
+
+    .banner-orb-two {
+      bottom: -180px;
+      left: 28%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
+      animation: orb-float-two 10s ease-in-out infinite alternate;
+    }
+
+    .banner-shine {
+      position: absolute;
+      top: -55%;
+      left: -22%;
+      width: 16%;
+      height: 210%;
+      z-index: 0;
+      opacity: 0;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      animation: banner-shine 7s ease-in-out 1.5s infinite;
+      pointer-events: none;
+    }
+
+    .welcome-text,
+    .welcome-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    .welcome-text {
+      animation: welcome-copy-enter 700ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .welcome-icon {
+      animation: welcome-logo-float 4s ease-in-out infinite;
     }
 
     h2 {
@@ -857,6 +935,58 @@ onBeforeUnmount(() => {
       border-radius: 16px;
       padding: 8px;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      transition: transform 300ms ease, box-shadow 300ms ease;
+    }
+
+    &:hover .welcome-logo {
+      transform: translateY(-4px) rotate(2deg) scale(1.03);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+    }
+  }
+
+  @keyframes banner-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes banner-gradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes orb-float-one {
+    from { transform: translate3d(0, 0, 0) scale(0.92); opacity: 0.65; }
+    to { transform: translate3d(42px, 24px, 0) scale(1.12); opacity: 1; }
+  }
+
+  @keyframes orb-float-two {
+    from { transform: translate3d(-20px, 0, 0) scale(1); opacity: 0.55; }
+    to { transform: translate3d(34px, -24px, 0) scale(1.16); opacity: 0.86; }
+  }
+
+  @keyframes banner-shine {
+    0%, 60% { left: -22%; opacity: 0; }
+    66% { opacity: 0.9; }
+    82%, 100% { left: 112%; opacity: 0; }
+  }
+
+  @keyframes welcome-copy-enter {
+    from { opacity: 0; transform: translateX(-18px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes welcome-logo-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-7px) rotate(1.5deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .welcome-banner,
+    .welcome-text,
+    .welcome-icon,
+    .banner-orb,
+    .banner-shine {
+      animation: none !important;
     }
   }
 
@@ -1022,7 +1152,7 @@ onBeforeUnmount(() => {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #667eea;
+      background: #123e81;
       margin-top: 6px;
       flex-shrink: 0;
     }
@@ -1044,7 +1174,7 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 16px;
-    .time { color: #667eea; font-weight: 500; min-width: 120px; }
+    .time { color: #123e81; font-weight: 500; min-width: 120px; }
     .course { font-weight: 500; flex: 1; }
     .room { color: #999; font-size: 13px; }
   }
@@ -1062,17 +1192,63 @@ onBeforeUnmount(() => {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+
+      .birthday-settings-button {
+        height: 34px;
+        min-height: 34px;
+        padding: 0 13px 0 7px;
+        gap: 7px;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+
+        &:hover,
+        &:focus {
+          color: #0a1b33;
+          border-color: #cbd5e1;
+          background: #f8fafc;
+          box-shadow: 0 7px 18px rgba(15, 23, 42, 0.08);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      .birthday-settings-icon {
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #123e81;
+        border-radius: 50%;
+        background: #eaf1fb;
+
+        .el-icon {
+          margin: 0;
+          font-size: 13px;
+        }
+      }
     }
     .calendar-card {
       :deep(.el-calendar__title) {
         font-weight: 600;
       }
       :deep(.el-calendar-table .el-calendar-day) {
-        height: 70px;
-        padding: 4px;
+        height: 74px;
+        padding: 5px;
+        transition: background 180ms ease;
       }
       :deep(.el-calendar-table td.is-selected .calendar-cell) {
-        color: #fff;
+        color: #0a1b33;
+        background: #eef4fc;
+        box-shadow: inset 0 0 0 1px #d9e5f4;
       }
     }
     .calendar-cell {
@@ -1083,14 +1259,35 @@ onBeforeUnmount(() => {
       justify-content: center;
       height: 100%;
       gap: 2px;
-      transition: all 0.2s;
+      border-radius: 10px;
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        background: #f7f9fc;
+        box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06);
+      }
       .cell-day {
         font-size: 14px;
         font-weight: 500;
       }
       .cell-holiday {
-        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         line-height: 1;
+
+        .holiday-icon {
+          width: 25px;
+          height: 25px;
+          display: grid;
+          place-items: center;
+          font-size: 15px;
+          border: 1px solid rgba(251, 113, 133, 0.18);
+          border-radius: 9px;
+          background: linear-gradient(145deg, #fff7ed, #fff1f2);
+          box-shadow: 0 4px 10px rgba(244, 63, 94, 0.09);
+        }
       }
       .cell-holiday-name {
         font-size: 10px;
@@ -1130,18 +1327,21 @@ onBeforeUnmount(() => {
         }
       }
       &.is-today {
+        background: #eef4fc;
+        box-shadow: inset 0 0 0 1px #d7e4f4;
+
         .cell-day {
-          color: #667eea;
+          color: #123e81;
           font-weight: 700;
         }
       }
       &.is-holiday {
-        background: linear-gradient(135deg, rgba(245, 108, 108, 0.06) 0%, rgba(255, 200, 100, 0.06) 100%);
-        border-radius: 6px;
+        background: linear-gradient(145deg, rgba(255, 247, 237, 0.9), rgba(255, 241, 242, 0.82));
+        box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.12);
       }
       &.is-birthday {
-        background: linear-gradient(135deg, rgba(255, 105, 180, 0.08) 0%, rgba(255, 214, 102, 0.08) 100%);
-        border-radius: 6px;
+        background: linear-gradient(145deg, rgba(253, 242, 248, 0.92), rgba(255, 251, 235, 0.88));
+        box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.12);
       }
     }
     .calendar-legend {
@@ -1262,7 +1462,7 @@ onBeforeUnmount(() => {
           &.color-pink   { border-left-color: #f5576c; background: #fff5f7; }
           &.color-green  { border-left-color: #42b983; background: #f1fbf4; }
           &.color-yellow { border-left-color: #f6a609; background: #fff8eb; }
-          &.color-purple { border-left-color: #9b6dff; background: #f6f1ff; }
+          &.color-purple { border-left-color: #3b82f6; background: #f6f1ff; }
           &.done {
             opacity: 0.55;
             .memo-text {
@@ -1362,7 +1562,7 @@ onBeforeUnmount(() => {
       transform: translateY(-2px);
     }
     &.active {
-      border-color: #667eea;
+      border-color: #123e81;
       background: linear-gradient(135deg, #f0f3ff 0%, #f9faff 100%);
       box-shadow: 0 4px 10px rgba(102, 126, 234, 0.18);
     }

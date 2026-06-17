@@ -273,7 +273,7 @@ const memoColors = [
   { value: 'pink', label: '粉色', color: '#f5576c' },
   { value: 'green', label: '绿色', color: '#42b983' },
   { value: 'yellow', label: '黄色', color: '#f6a609' },
-  { value: 'purple', label: '紫色', color: '#9b6dff' }
+  { value: 'purple', label: '海蓝', color: '#3b82f6' }
 ]
 
 const memoFilter = ref('all')
@@ -696,7 +696,7 @@ onBeforeUnmount(() => {
 .memo-item.color-pink { border-left-color: #f5576c; }
 .memo-item.color-green { border-left-color: #42b983; }
 .memo-item.color-yellow { border-left-color: #f6a609; }
-.memo-item.color-purple { border-left-color: #9b6dff; }
+.memo-item.color-purple { border-left-color: #3b82f6; }
 .memo-item.starred {
   background: linear-gradient(180deg, #fffdf2 0%, #ffffff 100%);
 }

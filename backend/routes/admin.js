@@ -12,6 +12,19 @@ router.use(roleMiddleware(['admin']));
 
 const uploadExcel = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
+function normalizeYouthImages(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+  return [];
+}
+
 // 获取统计信息
 router.get('/statistics', async (req, res) => {
   try {
@@ -20,6 +33,98 @@ router.get('/statistics', async (req, res) => {
     const [[{ count: taskCount }]] = await pool.execute('SELECT COUNT(*) as count FROM tasks');
     const [[{ count: feedbackCount }]] = await pool.execute('SELECT COUNT(*) as count FROM feedbacks WHERE status = 0');
     res.json({ code: 200, data: { studentCount, teacherCount, taskCount, feedbackCount } });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：管理员地图热度
+router.get('/youth-creation/regions', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT province_code, province_name, city_code, city_name,
+              SUM(status = 'approved') AS post_count,
+              SUM(status = 'pending') AS pending_count
+       FROM youth_creation_posts
+       GROUP BY province_code, province_name, city_code, city_name`
+    );
+    res.json({ code: 200, data: rows });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：管理员审核列表
+router.get('/youth-creation/posts', async (req, res) => {
+  const { status = 'pending', province_code, city_code, page = 1, pageSize = 20 } = req.query;
+  try {
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (status && status !== 'all') {
+      where += ' AND p.status = ?';
+      params.push(String(status));
+    }
+    if (province_code) {
+      where += ' AND p.province_code = ?';
+      params.push(String(province_code));
+    }
+    if (city_code) {
+      where += ' AND p.city_code = ?';
+      params.push(String(city_code));
+    }
+    const safePageSize = Math.min(Math.max(Number(pageSize) || 20, 1), 50);
+    const offset = (Math.max(Number(page) || 1, 1) - 1) * safePageSize;
+    const [rows] = await pool.query(
+      `SELECT p.*,
+              COALESCE(NULLIF(p.author_name, ''), u.name) AS author_name,
+              u.name AS publisher_name,
+              u.username AS publisher_username,
+              u.class_name AS publisher_class,
+              u.avatar,
+              reviewer.name AS reviewer_name
+       FROM youth_creation_posts p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN users reviewer ON reviewer.id = p.reviewed_by
+       ${where}
+       ORDER BY FIELD(p.status, 'pending', 'approved', 'rejected'), p.created_at DESC
+       LIMIT ${safePageSize} OFFSET ${offset}`,
+      params
+    );
+    const [[{ count }]] = await pool.execute(
+      `SELECT COUNT(*) AS count FROM youth_creation_posts p ${where}`,
+      params
+    );
+    rows.forEach((row) => {
+      row.images = normalizeYouthImages(row.images);
+    });
+    res.json({ code: 200, data: { list: rows, total: count } });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：审核通过
+router.put('/youth-creation/posts/:id/approve', async (req, res) => {
+  try {
+    const [result] = await pool.execute(
+      `UPDATE youth_creation_posts
+       SET status = 'approved', reviewed_by = ?, reviewed_at = NOW(), review_note = NULL
+       WHERE id = ?`,
+      [req.user.id, req.params.id]
+    );
+    if (!result.affectedRows) return res.json({ code: 404, message: '分享不存在' });
+    res.json({ code: 200, message: '审核通过' });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：删除分享
+router.delete('/youth-creation/posts/:id', async (req, res) => {
+  try {
+    const [result] = await pool.execute('DELETE FROM youth_creation_posts WHERE id = ?', [req.params.id]);
+    if (!result.affectedRows) return res.json({ code: 404, message: '分享不存在' });
+    res.json({ code: 200, message: '删除成功' });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
   }

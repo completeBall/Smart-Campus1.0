@@ -3,7 +3,8 @@ const router = express.Router();
 const pool = require('../config/db');
 const XLSX = require('xlsx');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { callChatCompletion, getProviderDefaults, maskKey } = require('../services/aiClient');
+const { getProviderDefaults, maskKey } = require('../services/aiClient');
+const { runCampusAgent } = require('../services/campusAgent');
 
 const MAX_ATTACHMENT_TEXT = 6000;
 const MAX_IMAGE_DATA_URL_LENGTH = 4 * 1024 * 1024;
@@ -52,6 +53,132 @@ const extractSpreadsheetText = (item) => {
 
 router.use(authMiddleware);
 router.use(roleMiddleware(['student']));
+
+// 青年共创：地区热度
+router.get('/youth-creation/regions', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT province_code, province_name, city_code, city_name, COUNT(*) AS post_count
+       FROM youth_creation_posts
+       WHERE status = 'approved'
+       GROUP BY province_code, province_name, city_code, city_name`
+    );
+    res.json({ code: 200, data: rows });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：按省市浏览分享
+router.get('/youth-creation/posts', async (req, res) => {
+  const { province_code, city_code, page = 1, pageSize = 12 } = req.query;
+  const userId = req.user.id;
+  try {
+    let where = "WHERE p.status = 'approved'";
+    const params = [userId];
+    const countParams = [];
+    if (province_code) {
+      where += ' AND p.province_code = ?';
+      params.push(String(province_code));
+      countParams.push(String(province_code));
+    }
+    if (city_code) {
+      where += ' AND p.city_code = ?';
+      params.push(String(city_code));
+      countParams.push(String(city_code));
+    }
+    const safePageSize = Math.min(Math.max(Number(pageSize) || 12, 1), 30);
+    const offset = (Math.max(Number(page) || 1, 1) - 1) * safePageSize;
+    const [rows] = await pool.query(
+        `SELECT p.*, COALESCE(NULLIF(p.author_name, ''), u.name) AS author_name,
+         EXISTS(SELECT 1 FROM youth_creation_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS is_liked
+       FROM youth_creation_posts p
+       JOIN users u ON u.id = p.user_id
+       ${where}
+       ORDER BY p.created_at DESC LIMIT ${safePageSize} OFFSET ${offset}`,
+      params
+    );
+    const [[{ count }]] = await pool.execute(
+      `SELECT COUNT(*) AS count FROM youth_creation_posts p ${where}`,
+      countParams
+    );
+      rows.forEach((row) => {
+        if (Array.isArray(row.images)) {
+          row.images = row.images;
+        } else if (typeof row.images === 'string' && row.images) {
+          try {
+            row.images = JSON.parse(row.images);
+          } catch (error) {
+            row.images = [];
+          }
+        } else {
+          row.images = [];
+        }
+        row.is_liked = !!row.is_liked;
+      });
+    res.json({ code: 200, data: { list: rows, total: count } });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：发布地区分享
+router.post('/youth-creation/posts', async (req, res) => {
+    const { province_code, province_name, city_code, city_name, author_name, content, images = [] } = req.body;
+    const text = String(content || '').trim();
+    const displayName = String(author_name || '').trim();
+  if (!province_code || !province_name || !city_code || !city_name) {
+    return res.json({ code: 400, message: '请选择要分享的城市' });
+  }
+    if (!displayName) return res.json({ code: 400, message: '请填写发起者名称' });
+    if (displayName.length > 50) return res.json({ code: 400, message: '发起者名称不能超过 50 个字' });
+  const safeImages = Array.isArray(images) ? images.filter((url) => typeof url === 'string').slice(0, 9) : [];
+    if (!text && safeImages.length === 0) return res.json({ code: 400, message: '请填写文案或上传至少一张图片' });
+    if (text.length > 2000) return res.json({ code: 400, message: '分享内容不能超过 2000 字' });
+  try {
+    const [result] = await pool.execute(
+        `INSERT INTO youth_creation_posts
+         (user_id, province_code, province_name, city_code, city_name, author_name, content, images, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [
+        req.user.id,
+        String(province_code),
+        String(province_name).slice(0, 50),
+          String(city_code),
+          String(city_name).slice(0, 50),
+          displayName.slice(0, 50),
+          text,
+        safeImages.length ? JSON.stringify(safeImages) : null
+      ]
+    );
+      res.json({ code: 200, message: '分享已提交，等待管理员审核后展示', data: { id: result.insertId } });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 青年共创：点赞
+router.post('/youth-creation/posts/:id/like', async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.user.id;
+  try {
+    const [[liked]] = await pool.execute(
+      'SELECT id FROM youth_creation_likes WHERE post_id = ? AND user_id = ?',
+      [postId, userId]
+    );
+    if (liked) {
+      await pool.execute('DELETE FROM youth_creation_likes WHERE id = ?', [liked.id]);
+      await pool.execute('UPDATE youth_creation_posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?', [postId]);
+    } else {
+      await pool.execute('INSERT INTO youth_creation_likes (post_id, user_id) VALUES (?, ?)', [postId, userId]);
+      await pool.execute('UPDATE youth_creation_posts SET like_count = like_count + 1 WHERE id = ?', [postId]);
+    }
+    const [[post]] = await pool.execute('SELECT like_count FROM youth_creation_posts WHERE id = ?', [postId]);
+    res.json({ code: 200, data: { liked: !liked, like_count: post?.like_count || 0 } });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
 
 // 学生统计
 router.get('/statistics', async (req, res) => {
@@ -995,6 +1122,39 @@ router.get('/colleges', async (req, res) => {
     }
 
     // 修复 activity_score_records：删除错误的唯一约束，并补 source_type 字段
+    let activityScoreFkName = null;
+    try {
+      const [fkRows] = await pool.execute(`
+        SELECT CONSTRAINT_NAME
+        FROM information_schema.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'activity_score_records'
+          AND COLUMN_NAME = 'activity_id'
+          AND REFERENCED_TABLE_NAME IS NOT NULL
+        LIMIT 1
+      `);
+      activityScoreFkName = fkRows[0]?.CONSTRAINT_NAME || null;
+      if (activityScoreFkName) {
+        await pool.execute(`ALTER TABLE activity_score_records DROP FOREIGN KEY \`${activityScoreFkName}\``);
+      }
+    } catch (e) {
+      if (!['ER_NO_SUCH_TABLE', 'ER_CANT_DROP_FIELD_OR_KEY', 'ER_FK_COLUMN_CANNOT_CHANGE', 'ER_CANNOT_CHANGE_COLUMN'].includes(e.code)) throw e;
+    }
+    try {
+      await pool.execute(`ALTER TABLE activity_score_records MODIFY COLUMN activity_id INT DEFAULT NULL COMMENT '关联活动ID，系统加分可为空'`);
+    } catch (e) {
+      if (!['ER_NO_SUCH_TABLE', 'ER_FK_COLUMN_CANNOT_CHANGE', 'ER_CANNOT_CHANGE_COLUMN'].includes(e.code)) throw e;
+    }
+    try {
+      await pool.execute(
+        `UPDATE activity_score_records r
+         LEFT JOIN activities a ON r.activity_id = a.id
+         SET r.activity_id = NULL
+         WHERE r.activity_id IS NOT NULL AND a.id IS NULL`
+      );
+    } catch (e) {
+      if (e.code !== 'ER_NO_SUCH_TABLE') throw e;
+    }
     try {
       await pool.execute(`ALTER TABLE activity_score_records ADD COLUMN source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分'`);
     } catch (e) {
@@ -1010,6 +1170,18 @@ router.get('/colleges', async (req, res) => {
     if (scoreIndexes.length > 0) {
       await pool.execute('ALTER TABLE activity_score_records DROP INDEX uk_activity_student_score');
       console.log('[DB Fix] 已删除 activity_score_records 的错误唯一约束 uk_activity_student_score');
+    }
+
+    if (activityScoreFkName) {
+      try {
+        await pool.execute(
+          `ALTER TABLE activity_score_records
+           ADD CONSTRAINT \`${activityScoreFkName}\`
+           FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE`
+        );
+      } catch (e) {
+        if (!['ER_DUP_KEYNAME', 'ER_CANNOT_ADD_FOREIGN', 'ER_FK_DUP_NAME'].includes(e.code)) throw e;
+      }
     }
 
     // 修复 leave_requests：补全晚归/不归相关字段
@@ -1089,21 +1261,27 @@ router.get('/daily-words', async (req, res) => {
 // 提交单词测试（最多3次，以最高正确率那次加分）
 router.post('/daily-words/submit', async (req, res) => {
   const studentId = req.user.id;
-  const { answers } = req.body;
+  const answers = req.body.answers && typeof req.body.answers === 'object' ? req.body.answers : {};
+  let conn;
   try {
+    conn = await pool.getConnection();
     const today = new Date().toISOString().slice(0, 10);
-    const [records] = await pool.execute(
+    await conn.beginTransaction();
+
+    const [records] = await conn.execute(
       'SELECT * FROM word_study_records WHERE student_id = ? AND study_date = ?',
       [studentId, today]
     );
     if (records.length >= 3) {
+      await conn.rollback();
       return res.json({ code: 400, message: '今日3次机会已用完' });
     }
-    const wordIds = Object.keys(answers).map(Number);
+    const wordIds = Object.keys(answers).map(Number).filter(Number.isInteger);
     if (wordIds.length === 0) {
+      await conn.rollback();
       return res.json({ code: 400, message: '请提交答案' });
     }
-    const [words] = await pool.execute(
+    const [words] = await conn.execute(
       `SELECT id, word FROM word_bank WHERE id IN (${wordIds.map(() => '?').join(',')})`,
       wordIds
     );
@@ -1112,7 +1290,7 @@ router.post('/daily-words/submit', async (req, res) => {
     const totalWords = wordIds.length;
     const accuracy = +((correctCount / totalWords) * 100).toFixed(2);
     // 保存本次记录
-    await pool.execute(
+    const [recordResult] = await conn.execute(
       'INSERT INTO word_study_records (student_id, study_date, total_words, correct_count, accuracy, score_added, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
       [studentId, today, totalWords, correctCount, accuracy, 0]
     );
@@ -1122,45 +1300,52 @@ router.post('/daily-words/submit', async (req, res) => {
     const prevBestAccuracy = records.length > 0 ? Math.max(...records.map(r => r.accuracy)) : 0;
     if (!hasScoreAdded && totalWords >= 50 && accuracy >= 80 && accuracy >= prevBestAccuracy) {
       const semester = '2024-2025-2';
-      const [[cs]] = await pool.execute(
+      const [[cs]] = await conn.execute(
         'SELECT * FROM comprehensive_scores WHERE student_id = ? AND semester = ?',
         [studentId, semester]
       );
       if (!cs) {
-        await pool.execute(
+        await conn.execute(
           `INSERT INTO comprehensive_scores (student_id, academic_score, moral_score, sports_score, arts_score, labor_score, total_score, semester)
            VALUES (?, 0, 0, 0, 0, 0, 0, ?)`,
           [studentId, semester]
         );
       }
-      await pool.execute(
+      await conn.execute(
         `UPDATE comprehensive_scores
          SET academic_score = academic_score + 0.5,
-             total_score = (academic_score * 0.60 + moral_score * 0.16 + sports_score * 0.08 + arts_score * 0.08 + labor_score * 0.08)
+             total_score = ((academic_score + 0.5) * 0.60 + moral_score * 0.16 + sports_score * 0.08 + arts_score * 0.08 + labor_score * 0.08)
          WHERE student_id = ? AND semester = ?`,
         [studentId, semester]
       );
       // 标记本次记录已加分
-      await pool.execute(
-        'UPDATE word_study_records SET score_added = 1 WHERE student_id = ? AND study_date = ? ORDER BY created_at DESC LIMIT 1',
-        [studentId, today]
+      await conn.execute(
+        'UPDATE word_study_records SET score_added = 1 WHERE id = ?',
+        [recordResult.insertId]
       );
       // 同时写入加分明细，便于学生查看记录
-      await pool.execute(
+      await conn.execute(
         `INSERT INTO activity_score_records
          (activity_id, student_id, score_type, score_value, semester, status, submitted_by, submitted_at, remark, source_type)
-         VALUES (0, ?, 'academic', 0.5, ?, 1, ?, NOW(), '每日背单词完成加分', 'system')`,
+         VALUES (NULL, ?, 'academic', 0.5, ?, 1, ?, NOW(), '每日背单词完成加分', 'system')`,
         [studentId, semester, studentId]
       );
       scoreAdded = true;
     }
+
+    await conn.commit();
     res.json({
       code: 200,
       message: scoreAdded ? '恭喜！本次为最佳成绩，智育分+0.5' : '提交成功',
       data: { totalWords, correctCount, accuracy, scoreAdded, attempt: records.length + 1 }
     });
   } catch (err) {
+    if (conn) {
+      await conn.rollback().catch(() => {});
+    }
     res.status(500).json({ code: 500, message: err.message });
+  } finally {
+    if (conn) conn.release();
   }
 });
 
@@ -1186,9 +1371,9 @@ router.post('/games/play', async (req, res) => {
   const studentId = req.user.id;
   const { game_type, score, level, play_time } = req.body;
   try {
-    if (!['minesweeper', 'sudoku', 'chess', 'gomoku', 'doudizhu', 'sokoban', 'idiom', 'snake'].includes(game_type)) {
-      return res.json({ code: 400, message: '游戏类型错误' });
-    }
+      if (!['minesweeper', 'sudoku', 'chess', 'gomoku', 'doudizhu', 'sokoban', 'idiom', 'snake', 'typing', 'tetris', 'lantern_riddle'].includes(game_type)) {
+        return res.json({ code: 400, message: '游戏类型错误' });
+      }
     const today = new Date().toISOString().slice(0, 10);
     const [[{ count }]] = await pool.execute(
       'SELECT COUNT(*) as count FROM game_records WHERE student_id = ? AND game_type = ? AND play_date = ?',
@@ -1216,7 +1401,7 @@ router.get('/games/today', async (req, res) => {
       'SELECT game_type, COUNT(*) as count FROM game_records WHERE student_id = ? AND play_date = ? GROUP BY game_type',
       [studentId, today]
     );
-    const result = { minesweeper: 0, sudoku: 0, chess: 0, gomoku: 0, doudizhu: 0, sokoban: 0, idiom: 0, snake: 0 };
+      const result = { minesweeper: 0, sudoku: 0, chess: 0, gomoku: 0, doudizhu: 0, sokoban: 0, idiom: 0, snake: 0, typing: 0, tetris: 0, lantern_riddle: 0 };
     rows.forEach(r => { result[r.game_type] = r.count; });
     res.json({ code: 200, data: result });
   } catch (err) {
@@ -1304,8 +1489,8 @@ router.get('/ai/status', async (req, res) => {
          COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
          COALESCE(SUM(total_tokens), 0) AS total_tokens,
          COUNT(*) AS request_count
-       FROM ai_usage_logs
-       WHERE user_id = ? AND purpose = 'chat'`,
+      FROM ai_usage_logs
+      WHERE user_id = ? AND purpose IN ('chat', 'agent')`,
       [req.user.id]
     );
 
@@ -1348,7 +1533,6 @@ router.post('/ai/chat', async (req, res) => {
       return res.json({ code: 400, message: '管理员尚未配置 AI API Key' });
     }
 
-    const defaults = getProviderDefaults(row.provider);
     const incoming = Array.isArray(req.body.messages) ? req.body.messages : [];
     const userQuestion = String(req.body.question || '').trim();
     const buildContent = (content, attachments = []) => {
@@ -1412,22 +1596,15 @@ router.post('/ai/chat', async (req, res) => {
       return res.json({ code: 400, message: '请输入要咨询的问题或上传附件' });
     }
 
-    const messages = [
-      {
-        role: 'system',
-        content: '你是智慧校园学生端的智能 AI 助手，回答要清晰、友好、适合学生使用。可以帮助学习规划、作业思路、校园事务咨询和生活建议。不要编造学校内部不存在的数据。'
-      },
-      ...normalized
-    ];
-
-    const result = await callChatCompletion({
+    const result = await runCampusAgent({
+      studentId,
       provider: row.provider,
       apiKey: row.api_key,
-      model: row.model || defaults.model,
-      baseUrl: row.base_url || defaults.baseUrl,
-      temperature: Number(req.body.temperature || 0.7),
+      model: row.model || getProviderDefaults(row.provider).model,
+      baseUrl: row.base_url || getProviderDefaults(row.provider).baseUrl,
+      temperature: Number(req.body.temperature || 0.4),
       maxTokens: Number(req.body.max_tokens || 1200),
-      messages
+      messages: normalized
     });
 
     await recordAiUsage({
@@ -1435,18 +1612,19 @@ router.post('/ai/chat', async (req, res) => {
       provider: row.provider,
       model: result.model,
       usage: result.usage,
-      purpose: 'chat',
+      purpose: 'agent',
       success: 1
     });
 
     res.json({
       code: 200,
       data: {
-        answer: result.content,
+        answer: result.answer,
         provider: row.provider,
-        provider_label: defaults.label,
+        provider_label: result.provider_label || getProviderDefaults(row.provider).label,
         model: result.model,
-        usage: result.usage
+        usage: result.usage,
+        tool_trace: result.tool_trace || []
       }
     });
   } catch (err) {
@@ -1456,7 +1634,7 @@ router.post('/ai/chat', async (req, res) => {
       provider: row?.provider || 'unknown',
       model: row?.model || null,
       usage: {},
-      purpose: 'chat',
+      purpose: 'agent',
       success: 0,
       errorMessage: err.message
     }).catch(() => {});

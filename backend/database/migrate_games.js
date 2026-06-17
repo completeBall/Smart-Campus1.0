@@ -4,12 +4,12 @@ const { dbConfig } = require('../config/db');
 async function migrate() {
   const conn = await mysql.createConnection(dbConfig);
 
-  console.log('Starting games migration (add chess + gomoku to game_records)...');
+  console.log('Starting games migration (extend game_records game types)...');
 
   try {
     await conn.execute(`
       ALTER TABLE game_records
-      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL
+      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake','typing','tetris','lantern_riddle') NOT NULL
     `);
     console.log('Updated game_records.game_type enum');
   } catch (e) {

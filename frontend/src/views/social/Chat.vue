@@ -459,8 +459,10 @@ onBeforeUnmount(() => {
           background: #ecf0fe;
         }
         &.active {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: #fff;
+          color: #0a1b33;
+          border: 1px solid #dbe5f2;
+          background: #f5f8fc;
+          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
         }
       }
     }
@@ -478,7 +480,8 @@ onBeforeUnmount(() => {
       transition: background 0.2s;
       &:hover { background: #f0f0fc; }
       &.active {
-        background: linear-gradient(90deg, rgba(102,126,234,0.18), rgba(118,75,162,0.12));
+        background: #f5f8fc;
+        box-shadow: inset 3px 0 0 #123e81;
       }
       .group-avatar {
         width: 40px;
@@ -572,8 +575,10 @@ onBeforeUnmount(() => {
         .message-bubble-wrap { align-items: flex-end; }
         .msg-meta { flex-direction: row-reverse; }
         .message-bubble {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #fff;
+          color: #0a1b33;
+          border: 1px solid #dbe5f2;
+          background: #eaf1fb;
+          box-shadow: 0 4px 12px rgba(18, 62, 129, 0.08);
         }
       }
       .message-bubble-wrap {
@@ -602,6 +607,7 @@ onBeforeUnmount(() => {
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         &.is-image {
           padding: 4px;
+          border: none !important;
           background: transparent !important;
           box-shadow: none;
         }

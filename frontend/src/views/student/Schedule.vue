@@ -89,7 +89,7 @@ const getCourses = (day, hour) => {
 }
 
 const palettes = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #123e81 0%, #0a152d 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
   'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
@@ -120,12 +120,27 @@ onMounted(loadData)
     .class-tag {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 13px;
-      color: #fff;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 4px 10px;
-      border-radius: 14px;
+      gap: 7px;
+      min-height: 34px;
+      padding: 0 13px 0 7px;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+
+      .el-icon {
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #123e81;
+        border-radius: 50%;
+        background: #eaf1fb;
+      }
     }
   }
   .schedule-grid {
@@ -149,18 +164,21 @@ onMounted(loadData)
     .day-col {
       position: relative;
       &.today {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
+        color: #0a1b33;
+        background: #f5f8fc;
+        box-shadow: inset 0 -3px 0 #123e81;
       }
       .today-tag {
         position: absolute;
         top: 4px;
         right: 4px;
         font-size: 10px;
+        border: 1px solid #dbe5f2;
         background: #fff;
-        color: #667eea;
+        color: #123e81;
         padding: 1px 6px;
         border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
       }
     }
   }
@@ -202,14 +220,14 @@ onMounted(loadData)
       &:last-child { border-right: none; }
     }
     .course-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
       color: #fff;
       border-radius: 6px;
       padding: 8px;
       margin-bottom: 6px;
       position: relative;
       &.adjusted {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(135deg, #38bdf8 0%, #f5576c 100%);
       }
       .course-name {
         font-size: 13px;

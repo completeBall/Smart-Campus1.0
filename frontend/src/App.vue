@@ -3,17 +3,6 @@
 </template>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
-  background: #f0f2f5;
-}
-
 /* 美化 ElMessageBox 弹窗 */
 .el-message-box {
   border-radius: 20px !important;
@@ -25,14 +14,14 @@ body {
 
 .el-message-box__header {
   padding: 20px 24px !important;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%) !important;
-  border-bottom: 1px solid #e4e7ed;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .el-message-box__title {
   font-size: 18px !important;
   font-weight: 700 !important;
-  color: #1a1a2e !important;
+  color: #0a1b33 !important;
 }
 
 .el-message-box__headerbtn {
@@ -47,7 +36,7 @@ body {
 }
 
 .el-message-box__headerbtn .el-message-box__close:hover {
-  color: #409eff;
+  color: #123e81;
 }
 
 .el-message-box__content {
@@ -73,7 +62,7 @@ body {
 }
 
 .el-message-box__btns .el-button {
-  border-radius: 10px !important;
+  border-radius: 999px !important;
   padding: 10px 24px !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
@@ -84,12 +73,16 @@ body {
 }
 
 .el-message-box__btns .el-button--primary {
-  background: linear-gradient(135deg, #409eff 0%, #1677ff 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(64, 158, 255, 0.35) !important;
+  color: #334155 !important;
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
 }
 
 .el-message-box__btns .el-button--primary:hover {
-  box-shadow: 0 6px 18px rgba(64, 158, 255, 0.45) !important;
+  color: #0a1b33 !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.08) !important;
 }
 </style>

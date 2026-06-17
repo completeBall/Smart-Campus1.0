@@ -12,7 +12,8 @@ export const replyPost = (id, data) => request.post(`/student/forum/posts/${id}/
 export const togglePostLike = (id) => request.post(`/student/forum/posts/${id}/like`)
 export const getHotPosts = () => request.get('/student/forum/hot')
 export const uploadForumImages = (formData) => request.post('/upload/image', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
+  headers: { 'Content-Type': 'multipart/form-data' },
+  silent: true
 })
 export const uploadForumFile = (formData) => request.post('/upload/file', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
@@ -65,5 +66,10 @@ export const playGame = (data) => request.post('/student/games/play', data)
 export const getTodayGames = () => request.get('/student/games/today')
 export const getGameLeaderboard = () => request.get('/student/games/leaderboard')
 export const getMyGameRank = () => request.get('/student/games/my-rank')
+export const getYouthRegions = () => request.get('/student/youth-creation/regions')
+export const getYouthPosts = (params) => request.get('/student/youth-creation/posts', { params })
+export const createYouthPost = (data) => request.post('/student/youth-creation/posts', data)
+export const toggleYouthPostLike = (id) => request.post(`/student/youth-creation/posts/${id}/like`)
 export const getAiStatus = () => request.get('/student/ai/status')
 export const chatWithAi = (data) => request.post('/student/ai/chat', data, { timeout: 70000 })
+export const chatWithAgent = (data) => request.post('/student/ai/chat', data, { timeout: 70000 })

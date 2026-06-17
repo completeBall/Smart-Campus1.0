@@ -199,7 +199,7 @@ const getCourses = (day, hour) => {
 }
 
 const palettes = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #123e81 0%, #0a152d 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
   'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
@@ -325,7 +325,7 @@ loadData()
     .day-col {
       position: relative;
       &.today {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
         color: #fff;
       }
       .today-tag {
@@ -334,7 +334,7 @@ loadData()
         right: 4px;
         font-size: 10px;
         background: #fff;
-        color: #667eea;
+        color: #123e81;
         padding: 1px 6px;
         border-radius: 10px;
       }
@@ -378,7 +378,7 @@ loadData()
       &:last-child { border-right: none; }
     }
     .course-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
       color: #fff;
       border-radius: 6px;
       padding: 8px;
@@ -388,7 +388,7 @@ loadData()
       position: relative;
       &:hover { transform: scale(1.02); }
       &.adjusted {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(135deg, #38bdf8 0%, #f5576c 100%);
       }
       .course-name {
         font-size: 13px;

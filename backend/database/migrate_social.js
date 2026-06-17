@@ -122,11 +122,11 @@ async function migrate() {
     console.log('attendance.check_in_at already exists');
   }
 
-  // 9. game_records.game_type 扩枚举: doudizhu
+  // 9. game_records.game_type 扩枚举: doudizhu, typing
   try {
     await conn.execute(`
       ALTER TABLE game_records
-      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL
+      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake','typing','tetris','lantern_riddle') NOT NULL
     `);
     console.log('Extended game_records.game_type ENUM');
   } catch (e) {

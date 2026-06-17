@@ -23,6 +23,7 @@ const routes = [
       { path: 'feedback', component: () => import('@/views/admin/Feedback.vue') },
       { path: 'notices', component: () => import('@/views/admin/Notices.vue') },
       { path: 'ai-settings', component: () => import('@/views/admin/AiSettings.vue') },
+      { path: 'youth-creation', component: () => import('@/views/admin/YouthCreationReview.vue') },
       { path: 'profile', component: () => import('@/views/profile/Profile.vue') }
     ]
   },
@@ -64,6 +65,7 @@ const routes = [
       { path: 'leave', component: () => import('@/views/student/Leave.vue') },
       { path: 'assessment', component: () => import('@/views/student/Assessment.vue') },
       { path: 'activities', component: () => import('@/views/student/Activities.vue') },
+      { path: 'youth-creation', component: () => import('@/views/student/YouthCreation.vue') },
       { path: 'daily-words', component: () => import('@/views/student/DailyWords.vue') },
       { path: 'minesweeper', component: () => import('@/views/student/Minesweeper.vue') },
       { path: 'sudoku', component: () => import('@/views/student/Sudoku.vue') },
@@ -80,6 +82,9 @@ const routes = [
       { path: 'idiom', component: () => import('@/views/student/Idiom.vue') },
       { path: 'sokoban', component: () => import('@/views/student/Sokoban.vue') },
       { path: 'snake', component: () => import('@/views/student/Snake.vue') },
+      { path: 'typing', component: () => import('@/views/student/TypingPractice.vue') },
+      { path: 'tetris', component: () => import('@/views/student/Tetris.vue') },
+      { path: 'lantern-riddle', component: () => import('@/views/student/LanternRiddle.vue') },
       { path: 'profile', component: () => import('@/views/profile/Profile.vue') }
     ]
   }

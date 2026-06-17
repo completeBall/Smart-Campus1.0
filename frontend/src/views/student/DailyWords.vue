@@ -7,7 +7,7 @@
     <!-- 顶部规则说明 -->
     <el-card class="rule-card">
       <div class="rule-content">
-        <el-icon size="20" color="#667eea"><InfoFilled /></el-icon>
+        <el-icon size="20" color="#123e81"><InfoFilled /></el-icon>
         <div class="rule-text">
           <p>
             <strong>活动规则：</strong>
@@ -146,7 +146,7 @@ const countdownPercent = computed(() => (countdown.value / TIME_LIMIT) * 100)
 const countdownColor = computed(() => {
   if (countdown.value <= 2) return '#f56c6c'
   if (countdown.value <= 3) return '#e6a23c'
-  return '#667eea'
+  return '#123e81'
 })
 
 const progressColors = [
@@ -251,21 +251,22 @@ const nextWord = () => {
 const submitAll = async () => {
   clearTimer()
   try {
-    const { data } = await submitDailyWords({ answers: answers.value })
-    ElMessage.success(data.message)
+    const res = await submitDailyWords({ answers: answers.value })
+    const result = res.data || res
+    ElMessage.success(res.message || result.message || '提交成功')
     inProgress.value = false
     attempts.value.push({
-      total_words: data.totalWords,
-      correct_count: data.correctCount,
-      accuracy: data.accuracy,
-      score_added: data.scoreAdded ? 1 : 0
+      total_words: result.totalWords,
+      correct_count: result.correctCount,
+      accuracy: result.accuracy,
+      score_added: result.scoreAdded ? 1 : 0
     })
-    if (data.scoreAdded) hasScoreAdded.value = true
+    if (result.scoreAdded) hasScoreAdded.value = true
     remaining.value = Math.max(0, remaining.value - 1)
     const best = attempts.value.reduce((b, r) => r.accuracy > b.accuracy ? r : b, attempts.value[0])
     bestRecord.value = best
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || '提交失败')
+    ElMessage.error(e.response?.data?.message || e.message || '提交失败')
   }
 }
 
@@ -349,7 +350,7 @@ onUnmounted(() => clearTimer())
       .countdown-num {
         font-size: 28px;
         font-weight: 700;
-        color: #667eea;
+        color: #123e81;
         transition: color 0.3s;
       }
       .countdown-label {

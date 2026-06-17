@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const app = express();
+const IMAGE_UPLOAD_LIMIT_MB = 30;
+const IMAGE_UPLOAD_LIMIT_SIZE = IMAGE_UPLOAD_LIMIT_MB * 1024 * 1024;
 
 // 确保 uploads 目录存在
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -27,10 +29,10 @@ const storage = multer.diskStorage({
   }
 })
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } })
-// 论坛图片上传(最大5MB,只允许图片)
+// 论坛图片上传(最大30MB,只允许图片)
 const imageUpload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: IMAGE_UPLOAD_LIMIT_SIZE, files: 9 },
   fileFilter: (req, file, cb) => {
     if (/^image\//.test(file.mimetype)) cb(null, true)
     else cb(new Error('仅允许上传图片'))
@@ -50,10 +52,10 @@ app.use('/api/social', require('./routes/social'));
 // 上传文件静态服务
 app.use('/uploads', express.static('uploads'));
 
-// 头像/背景图/照片上传接口(单张,最大5MB)
+// 头像/背景图/照片上传接口(单张,最大30MB)
 const photoUpload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: IMAGE_UPLOAD_LIMIT_SIZE },
   fileFilter: (req, file, cb) => {
     if (/^image\//.test(file.mimetype)) cb(null, true)
     else cb(new Error('仅允许上传图片'))
@@ -63,7 +65,7 @@ app.post('/api/upload/avatar', (req, res) => {
   photoUpload.single('avatar')(req, res, (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ code: 400, message: '图片大小不能超过5MB' })
+        return res.status(400).json({ code: 400, message: `图片大小不能超过${IMAGE_UPLOAD_LIMIT_MB}MB` })
       }
       return res.status(400).json({ code: 400, message: err.message })
     }
@@ -77,7 +79,18 @@ app.post('/api/upload/avatar', (req, res) => {
 // 论坛图片上传(支持多张)
 app.post('/api/upload/image', (req, res) => {
   imageUpload.array('images', 9)(req, res, (err) => {
-    if (err) return res.status(400).json({ code: 400, message: err.message })
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ code: 400, message: `图片大小不能超过${IMAGE_UPLOAD_LIMIT_MB}MB` })
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ code: 400, message: '最多只能上传9张图片' })
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ code: 400, message: '图片字段异常，请重新选择图片上传' })
+      }
+      return res.status(400).json({ code: 400, message: err.message || '图片上传失败' })
+    }
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ code: 400, message: '请上传图片' })
     }

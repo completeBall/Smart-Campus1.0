@@ -120,7 +120,7 @@
           <div v-else class="excellent-list">
             <div v-for="(item, index) in excellentList" :key="item.id" class="excellent-item">
               <div class="excellent-rank">{{ index + 1 }}</div>
-              <el-avatar :size="40" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;">
+              <el-avatar :size="40" style="background: linear-gradient(135deg, #123e81 0%, #0a152d 100%); color: #fff;">
                 {{ item.name?.charAt(0) }}
               </el-avatar>
               <div class="excellent-info">
@@ -289,7 +289,7 @@ loadScoreRecords()
         .score-value {
           font-size: 56px;
           font-weight: bold;
-          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(90deg, #123e81 0%, #0a152d 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -355,7 +355,7 @@ loadScoreRecords()
 
   .total-highlight {
     font-weight: bold;
-    color: #667eea;
+    color: #123e81;
     font-size: 15px;
   }
 
@@ -400,7 +400,7 @@ loadScoreRecords()
 
       .excellent-score {
         font-weight: bold;
-        color: #667eea;
+        color: #123e81;
         font-size: 16px;
       }
     }

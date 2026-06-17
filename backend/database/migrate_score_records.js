@@ -9,7 +9,7 @@ async function migrate() {
   await conn.execute(`
     CREATE TABLE IF NOT EXISTS activity_score_records (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      activity_id INT NOT NULL,
+      activity_id INT DEFAULT NULL COMMENT '关联活动ID，系统加分可为空',
       student_id INT NOT NULL COMMENT '被加分的学生',
       participant_id INT DEFAULT NULL COMMENT '关联的报名记录ID',
       score_type ENUM('academic','moral','sports','arts','labor') NOT NULL,
@@ -21,7 +21,7 @@ async function migrate() {
       reviewed_by INT DEFAULT NULL COMMENT '审核教师',
       reviewed_at DATETIME DEFAULT NULL,
       remark VARCHAR(255) DEFAULT NULL COMMENT '教师备注/拒绝原因',
-      UNIQUE KEY uk_activity_student_score (activity_id, student_id),
+      source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分',
       FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

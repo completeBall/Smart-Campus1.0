@@ -247,7 +247,7 @@ onBeforeUnmount(() => {
         .num {
           font-size: 36px;
           font-weight: bold;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #123e81, #0a152d);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;

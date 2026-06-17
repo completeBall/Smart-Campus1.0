@@ -27,6 +27,10 @@ logs/
 backend/uploads/*
 !backend/uploads/defaults/
 !backend/uploads/default-avatar.png
+!backend/uploads/1781599346426-369277338.jpg
+!backend/uploads/1781616154493-824277943.jpg
+!backend/uploads/1781616157436-530690459.jpg
+!backend/uploads/1781620175017-643866492.jpg
 
 # Lock files (optional - uncomment if you don't want to commit them)
 # **/package-lock.json

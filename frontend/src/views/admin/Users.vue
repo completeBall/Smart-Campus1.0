@@ -4,7 +4,7 @@
       <template #header>
         <div class="header-actions">
           <div class="header-left">
-            <el-icon size="20" color="#667eea"><UserFilled /></el-icon>
+            <el-icon size="20" color="#123e81"><UserFilled /></el-icon>
             <span class="card-title">用户管理</span>
             <el-tag v-if="total" type="info" effect="plain" size="small" round>{{ total }} 位用户</el-tag>
           </div>
@@ -646,7 +646,7 @@ onMounted(() => {
     gap: 8px;
 
     .user-avatar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
       color: #fff;
       font-size: 12px;
       font-weight: bold;

@@ -68,7 +68,7 @@ onMounted(loadData)
 .job-detail {
   .back-btn {
     margin-bottom: 16px;
-    color: #667eea;
+    color: #123e81;
   }
   .detail-card {
     .detail-header {

@@ -147,8 +147,8 @@ import { getMyStatus, setMyStatus, clearMyStatus } from '@/api/social'
 const router = useRouter()
 const userStore = useUserStore()
 const stats = ref([
-  { title: '发布任务', value: 0, icon: 'Document', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { title: '参与学生', value: 0, icon: 'User', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  { title: '发布任务', value: 0, icon: 'Document', gradient: 'linear-gradient(135deg, #123e81 0%, #0a152d 100%)' },
+  { title: '参与学生', value: 0, icon: 'User', gradient: 'linear-gradient(135deg, #38bdf8 0%, #f5576c 100%)' },
   { title: '待批改', value: 0, icon: 'EditPen', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }
 ])
 const pendingList = ref([])
@@ -392,7 +392,7 @@ onBeforeUnmount(() => {
       &:last-child { border-bottom: none; }
       .time {
         font-size: 13px;
-        color: #667eea;
+        color: #123e81;
         font-weight: 500;
         margin-bottom: 6px;
       }
@@ -431,7 +431,7 @@ onBeforeUnmount(() => {
     transition: all 0.2s;
     border: 2px solid transparent;
     &.active {
-      border-color: #667eea;
+      border-color: #123e81;
       background: rgba(102, 126, 234, 0.08);
     }
     &:hover {

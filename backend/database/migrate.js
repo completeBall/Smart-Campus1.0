@@ -126,7 +126,8 @@ async function runMigrations() {
     { name: 'games', fn: require('./migrate_games') },
     { name: 'software_major', fn: require('./migrate_software_major') },
     { name: 'words', fn: require('./migrate_words') },
-    { name: 'ai', fn: require('./migrate_ai') }
+    { name: 'ai', fn: require('./migrate_ai') },
+    { name: 'youth_creation', fn: require('./migrate_youth_creation') }
   ];
 
   for (const m of migrations) {

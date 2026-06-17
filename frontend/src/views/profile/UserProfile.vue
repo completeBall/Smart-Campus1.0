@@ -395,7 +395,7 @@ onBeforeUnmount(() => {
       .avatar-area {
         position: relative;
         .big-avatar {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
           color: #fff;
           font-size: 36px;
           font-weight: bold;
@@ -439,7 +439,7 @@ onBeforeUnmount(() => {
         .signature {
           margin: 6px 0 12px;
           font-size: 14px;
-          color: #667eea;
+          color: #123e81;
           font-style: italic;
           &.placeholder {
             color: #c0c4cc;
@@ -555,7 +555,7 @@ onBeforeUnmount(() => {
         .total-num {
           font-size: 48px;
           font-weight: bold;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #123e81, #0a152d);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
@@ -584,7 +584,7 @@ onBeforeUnmount(() => {
           font-size: 11px;
           opacity: 0.85;
         }
-        &.academic { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        &.academic { background: linear-gradient(135deg, #123e81 0%, #0a152d 100%); }
         &.moral    { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
         &.sports   { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
         &.arts     { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }

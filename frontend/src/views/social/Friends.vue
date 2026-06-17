@@ -326,7 +326,7 @@ onMounted(loadAll)
       }
       .signature {
         font-size: 12px;
-        color: #667eea;
+        color: #123e81;
         font-style: italic;
         margin-top: 4px;
         overflow: hidden;
@@ -361,7 +361,7 @@ onMounted(loadAll)
       .name-line { display: flex; align-items: center; gap: 6px; }
       .name { font-weight: 600; }
       .username { color: #909399; font-size: 12px; margin-top: 2px; }
-      .signature { color: #667eea; font-size: 12px; font-style: italic; margin-top: 4px; }
+      .signature { color: #123e81; font-size: 12px; font-style: italic; margin-top: 4px; }
       .time { color: #c0c4cc; font-size: 12px; margin-top: 4px; }
     }
     .request-actions {
@@ -383,7 +383,7 @@ onMounted(loadAll)
       width: 48px;
       height: 48px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
       color: #fff;
       display: flex;
       align-items: center;

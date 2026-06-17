@@ -4,7 +4,7 @@
       <template #header>
         <div class="header-actions">
           <div class="header-left">
-            <el-icon size="20" color="#667eea"><Bell /></el-icon>
+            <el-icon size="20" color="#123e81"><Bell /></el-icon>
             <span class="card-title">通知公告</span>
             <el-tag v-if="notices.length" type="info" effect="plain" size="small" round>{{ notices.length }} 条</el-tag>
           </div>

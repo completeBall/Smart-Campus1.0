@@ -1,146 +1,272 @@
 <template>
-  <div class="login-page">
-    <!-- 动态背景粒子 -->
-    <div class="particles">
-      <div v-for="n in 80" :key="n" class="particle" :style="getParticleStyle(n)"></div>
-    </div>
+  <main class="min-h-screen overflow-hidden bg-[#f9fafb] px-3 py-3 font-sans sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+    <section class="relative w-full max-w-[1400px] mx-auto rounded-[48px] bg-white border border-slate-200/50 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.03)] overflow-hidden h-[600px] flex flex-col">
+      <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden select-none">
+        <video
+          autoplay
+          loop
+          muted
+          playsinline
+          class="w-full h-full object-cover scale-105 transition-transform duration-1000"
+        >
+          <source :src="heroVideo" type="video/mp4">
+        </video>
+      </div>
 
-    <div class="login-container">
-      <!-- 左侧登录卡片 -->
-      <div class="login-left">
-        <div class="glass-card">
-          <div class="login-header">
-            <el-icon size="48" class="logo-icon"><School /></el-icon>
-            <h1 class="title">智慧校园</h1>
-            <p class="subtitle">Smart Campus Management System</p>
+      <div ref="textLayer" class="relative z-20 flex-1 px-8 md:px-16 pt-12 md:pt-16 flex flex-col items-start opacity-0">
+        <div class="max-w-[560px]">
+          <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0a1b33] shadow-sm backdrop-blur-xl">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]"></span>
+            Smart Campus 2.0
           </div>
-
-          <el-tabs v-model="activeRole" class="role-tabs" stretch>
-            <el-tab-pane label="学生登录" name="student" />
-            <el-tab-pane label="教师登录" name="teacher" />
-            <el-tab-pane label="管理员" name="admin" />
-          </el-tabs>
-
-          <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
-            <el-form-item prop="username">
-              <el-input
-                v-model="form.username"
-                placeholder="请输入账号"
-                size="large"
-                :prefix-icon="User"
-                class="custom-input"
-              />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                v-model="form.password"
-                type="password"
-                placeholder="请输入密码"
-                size="large"
-                :prefix-icon="Lock"
-                show-password
-                class="custom-input"
-                @keyup.enter="handleLogin"
-              />
-            </el-form-item>
-            <div class="login-options">
-              <el-checkbox v-model="remember">记住密码</el-checkbox>
-              <span class="default-pwd">默认密码: 123456</span>
-            </div>
-            <el-button
-              type="primary"
-              size="large"
-              class="login-btn"
-              :loading="loading"
-              @click="handleLogin"
+          <h1 class="campus-title font-display text-[54px] md:text-[76px] font-semibold leading-[0.95] tracking-[-0.06em]">
+            智慧校园
+          </h1>
+          <p class="mt-5 max-w-[620px] font-sans text-[14px] md:text-[15px] leading-7 text-[#64748b]">
+            <span class="md:whitespace-nowrap">Designing products, powering ecosystems and laying the foundation</span><br class="hidden md:block">
+            <span class="md:whitespace-nowrap">of a decentralized web for enterprises, builders and communities alike.</span>
+          </p>
+          <div class="mt-7 flex max-w-full flex-wrap items-center gap-3">
+            <button
+              ref="contactButton"
+              type="button"
+              :aria-expanded="contactOpen"
+              class="shrink-0 rounded-full bg-[#0a152d] px-6 py-3 text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(10,21,45,0.18)]"
+              @click="contactOpen = !contactOpen"
+              @mouseenter="animateButton(true)"
+              @mouseleave="animateButton(false)"
             >
-              登 录
-            </el-button>
-          </el-form>
-
-          <div class="login-footer">
-            <p>© 智慧校园系统 | t个球测试专用版</p>
+              Contact Us
+            </button>
+            <Transition name="contact-detail">
+              <button
+                v-if="contactOpen"
+                type="button"
+                class="whitespace-nowrap rounded-full border border-white/80 bg-white/85 px-5 py-3 text-[13px] font-semibold text-[#0a1b33] shadow-sm backdrop-blur-xl"
+                title="点击复制微信昵称"
+                @click="copyWechatNickname"
+              >
+                WeChat nickname : taball
+              </button>
+            </Transition>
           </div>
         </div>
       </div>
 
-      <!-- 右侧主题图片区 -->
-      <div class="login-right">
-        <div class="right-content">
-          <div class="floating-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-            <div class="shape shape-4"></div>
+      <Transition name="login-panel">
+        <button
+          v-if="!desktopLoginOpen"
+          type="button"
+          aria-label="展开登录卡片"
+          class="absolute right-5 top-5 z-20 hidden h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-white/90 text-lg text-[#0a1b33] shadow-[0_12px_35px_rgba(15,23,42,0.12)] backdrop-blur-2xl transition-transform hover:scale-105 md:flex lg:right-10 lg:top-10"
+          @click="openDesktopLogin"
+        >
+          ✦
+        </button>
+      </Transition>
+
+      <Transition name="login-panel">
+      <aside v-if="desktopLoginOpen" class="absolute right-5 top-5 z-20 hidden w-[380px] rounded-[34px] border border-white/70 bg-white/88 p-7 shadow-[0_28px_80px_rgba(15,23,42,0.12)] backdrop-blur-2xl md:block lg:right-10 lg:top-10">
+        <div class="mb-6 flex items-start justify-between">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Welcome back</p>
+            <h2 class="mt-2 font-display text-2xl font-medium tracking-[-0.03em] text-[#0a1b33]">登录智慧校园</h2>
           </div>
-          <div class="right-text">
-            <h2>智慧校园 未来已来</h2>
-            <p>融合信息技术与教育教学，打造数字化、智能化、个性化的现代教育新生态</p>
-            <div class="feature-tags">
-              <span class="tag"><el-icon><Monitor /></el-icon> 智能管理</span>
-              <span class="tag"><el-icon><Reading /></el-icon> 在线学习</span>
-              <span class="tag"><el-icon><Connection /></el-icon> 互动交流</span>
-              <span class="tag"><el-icon><OfficeBuilding /></el-icon> 校企合作</span>
-            </div>
+          <button
+            type="button"
+            aria-label="收起登录卡片"
+            class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/70 bg-white text-lg text-[#0a1b33] shadow-sm transition-transform hover:scale-105"
+            @click="desktopLoginOpen = false"
+          >
+            ✦
+          </button>
+        </div>
+
+        <div class="mb-5 grid grid-cols-3 gap-1 rounded-full bg-slate-100/80 p-1">
+          <button
+            v-for="role in roles"
+            :key="role.value"
+            type="button"
+            class="rounded-full px-2 py-2 text-[12px] font-semibold transition-all"
+            :class="activeRole === role.value ? 'bg-white text-[#0a1b33] shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+            @click="activeRole = role.value"
+          >
+            {{ role.label }}
+          </button>
+        </div>
+
+        <form class="space-y-3" @submit.prevent="handleLogin">
+          <label class="relative block">
+            <UserRound :size="17" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              ref="usernameInput"
+              v-model.trim="form.username"
+              type="text"
+              autocomplete="username"
+              placeholder="请输入账号"
+              class="h-12 w-full rounded-full border border-slate-200/80 bg-white/90 pl-11 pr-4 text-[13px] text-[#0a1b33] outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+            >
+          </label>
+          <label class="relative block">
+            <LockKeyhole :size="17" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              v-model="form.password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="请输入密码"
+              class="h-12 w-full rounded-full border border-slate-200/80 bg-white/90 pl-11 pr-4 text-[13px] text-[#0a1b33] outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+            >
+          </label>
+          <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+            <label class="flex cursor-pointer items-center gap-2">
+              <input v-model="remember" type="checkbox" class="h-3.5 w-3.5 accent-[#0a152d]">
+              记住账号
+            </label>
+            <span>默认密码 123456</span>
           </div>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#0a152d] text-[13px] font-semibold text-white shadow-[0_10px_25px_rgba(10,21,45,0.16)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(10,21,45,0.22)] disabled:cursor-wait disabled:opacity-70"
+          >
+            <span>{{ loading ? '正在登录...' : '进入校园' }}</span>
+            <ArrowRight v-if="!loading" :size="15" class="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </form>
+
+        <p class="mt-5 text-center text-[11px] leading-5 text-slate-400">智慧校园统一身份认证 · 安全连接</p>
+      </aside>
+      </Transition>
+
+    </section>
+
+    <section class="mx-auto mt-10 max-w-[1400px] pb-8">
+      <div
+        class="marquee-shell overflow-hidden"
+        :style="{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }"
+      >
+        <div class="marquee-track flex w-max gap-4 py-2">
+          <template v-for="copy in 2" :key="copy">
+            <article
+              v-for="logo in logos"
+              :key="`${copy}-${logo.alt}`"
+              class="group relative h-24 w-40 shrink-0 flex items-center justify-center rounded-full bg-white border border-slate-200/60 shadow-sm hover:border-slate-300 transition-all overflow-hidden"
+            >
+              <div
+                class="absolute inset-0 scale-150 opacity-0 transition-all duration-500 group-hover:scale-100 group-hover:opacity-100"
+                :style="{ background: `linear-gradient(135deg, ${logo.gradient.from}, ${logo.gradient.to})` }"
+              ></div>
+              <img
+                :src="logo.src"
+                :alt="logo.alt"
+                loading="lazy"
+                class="relative z-10 max-h-9 max-w-[86px] object-contain transition-all duration-300 group-hover:brightness-0 group-hover:invert"
+              >
+            </article>
+          </template>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <Teleport to="body">
+      <div v-if="mobileLoginOpen" class="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-3 backdrop-blur-sm md:hidden" @click.self="mobileLoginOpen = false">
+        <div class="w-full rounded-[32px] bg-white p-6 shadow-2xl">
+          <div class="mb-5 flex items-center justify-between">
+            <h2 class="font-display text-2xl font-medium text-[#0a1b33]">登录智慧校园</h2>
+            <button type="button" class="h-9 rounded-full bg-slate-100 px-4 text-xs font-semibold text-slate-500" @click="mobileLoginOpen = false">关闭</button>
+          </div>
+          <div class="mb-4 grid grid-cols-3 gap-1 rounded-full bg-slate-100 p-1">
+            <button v-for="role in roles" :key="role.value" type="button" class="rounded-full py-2 text-xs font-semibold" :class="activeRole === role.value ? 'bg-white text-[#0a1b33] shadow-sm' : 'text-slate-400'" @click="activeRole = role.value">{{ role.label }}</button>
+          </div>
+          <form class="space-y-3" @submit.prevent="handleLogin">
+            <input v-model.trim="form.username" type="text" placeholder="请输入账号" class="h-12 w-full rounded-full border border-slate-200 px-5 text-sm outline-none focus:border-slate-400">
+            <input v-model="form.password" type="password" placeholder="请输入密码" class="h-12 w-full rounded-full border border-slate-200 px-5 text-sm outline-none focus:border-slate-400">
+            <button type="submit" :disabled="loading" class="h-12 w-full rounded-full bg-[#0a152d] text-sm font-semibold text-white">{{ loading ? '正在登录...' : '进入校园' }}</button>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+  </main>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, School, Monitor, Reading, Connection, OfficeBuilding } from '@element-plus/icons-vue'
+import { animate } from 'motion'
+import { ArrowRight, LockKeyhole, UserRound } from '@lucide/vue'
 import { useUserStore } from '@/stores/user'
 import { login } from '@/api/auth'
 
+const heroVideo = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260505_101331_74f9b798-3f00-4e86-8a01-377aa16ffeaa.mp4'
+
+const roles = [
+  { label: '学生', value: 'student' },
+  { label: '教师', value: 'teacher' },
+  { label: '管理员', value: 'admin' }
+]
+
+const logos = [
+  { src: '/logos/campus-bird.png', alt: 'Smart Campus', gradient: { from: '#2563eb', to: '#93c5fd' } },
+  { src: 'https://svgl.app/library/shopify.svg', alt: 'Shopify', gradient: { from: '#facc15', to: '#fef08a' } },
+  { src: 'https://svgl.app/library/blender.svg', alt: 'Blender', gradient: { from: '#38bdf8', to: '#1d4ed8' } },
+  { src: 'https://svgl.app/library/figma.svg', alt: 'Figma', gradient: { from: '#2563eb', to: '#dbeafe' } },
+  { src: 'https://svgl.app/library/spotify.svg', alt: 'Spotify', gradient: { from: '#fb7185', to: '#f9a8d4' } },
+  { src: 'https://svgl.app/library/lottielab.svg', alt: 'Lottielab', gradient: { from: '#fde047', to: '#86efac' } },
+  { src: 'https://svgl.app/library/google-cloud.svg', alt: 'Google Cloud', gradient: { from: '#bae6fd', to: '#dbeafe' } },
+  { src: 'https://svgl.app/library/bing.svg', alt: 'Bing', gradient: { from: '#22d3ee', to: '#2dd4bf' } }
+]
+
 const router = useRouter()
 const userStore = useUserStore()
-const formRef = ref()
+const textLayer = ref(null)
+const contactButton = ref(null)
+const usernameInput = ref(null)
+const desktopLoginOpen = ref(false)
+const mobileLoginOpen = ref(false)
+const contactOpen = ref(false)
 const loading = ref(false)
 const activeRole = ref('student')
 const remember = ref(false)
+const form = reactive({ username: '', password: '' })
 
-const form = reactive({
-  username: '',
-  password: ''
+onMounted(() => {
+  animate(textLayer.value, { opacity: [0, 1], transform: ['translateY(18px)', 'translateY(0px)'] }, { duration: 0.7, easing: [0.22, 1, 0.36, 1] })
 })
 
-const rules = {
-  username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+const animateButton = (hovered) => {
+  animate(contactButton.value, { transform: hovered ? 'scale(1.04)' : 'scale(1)' }, { duration: 0.2 })
 }
 
-const getParticleStyle = (n) => {
-  const size = Math.random() * 10 + 3
-  const left = Math.random() * 100
-  const delay = Math.random() * 15
-  const duration = Math.random() * 12 + 12
-  const opacity = Math.random() * 0.4 + 0.5
-  const colors = [
-    `rgba(255, 255, 255, ${opacity})`,
-    `rgba(200, 220, 255, ${opacity})`,
-    `rgba(240, 200, 255, ${opacity})`,
-    `rgba(180, 230, 255, ${opacity})`
-  ]
-  const color = colors[n % colors.length]
-  const glow = `0 0 ${size * 2}px ${size / 2}px ${color.replace(/[\d.]+\)$/, '0.25)')}`
-  return {
-    width: `${size}px`,
-    height: `${size}px`,
-    left: `${left}%`,
-    animationDelay: `${delay}s`,
-    animationDuration: `${duration}s`,
-    background: color,
-    boxShadow: glow
+const copyWechatNickname = async () => {
+  try {
+    await navigator.clipboard.writeText('taball')
+    ElMessage.success('微信昵称已复制')
+  } catch {
+    ElMessage.info('WeChat nickname : taball')
   }
 }
 
+const openDesktopLogin = async () => {
+  desktopLoginOpen.value = true
+  await nextTick()
+  window.setTimeout(() => usernameInput.value?.focus(), 220)
+}
+
+const focusLogin = async () => {
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    await openDesktopLogin()
+    return
+  }
+  mobileLoginOpen.value = true
+}
+
 const handleLogin = async () => {
-  await formRef.value.validate()
+  if (!form.username || !form.password) {
+    ElMessage.warning('请输入账号和密码')
+    return
+  }
+
   loading.value = true
   try {
     const res = await login({
@@ -158,359 +284,56 @@ const handleLogin = async () => {
 }
 </script>
 
-<style scoped lang="scss">
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
+<style scoped>
+.campus-title {
+  width: fit-content;
+  padding-right: 0.12em;
+  color: transparent;
+  background: linear-gradient(112deg, #07172f 5%, #123e81 48%, #1677e8 78%, #0a1b33 100%);
+  background-size: 180% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 10px 20px rgba(29, 78, 216, 0.14));
+  animation: title-shimmer 7s ease-in-out infinite alternate;
+}
+
+@keyframes title-shimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+.login-panel-enter-active,
+.login-panel-leave-active {
+  transform-origin: top right;
+  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.login-panel-enter-from,
+.login-panel-leave-to {
+  opacity: 0;
+  transform: scale(0.18);
+}
+
+.contact-detail-enter-active,
+.contact-detail-leave-active {
+  transition: opacity 220ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1), max-width 280ms ease;
   overflow: hidden;
 }
 
-/* 粒子背景 */
-.particles {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-  pointer-events: none;
+.contact-detail-enter-from,
+.contact-detail-leave-to {
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-12px);
 }
 
-.particle {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  animation: float linear infinite;
-  bottom: -20px;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-110vh) scale(0.3);
-    opacity: 0;
-  }
-}
-
-.login-container {
-  display: flex;
-  width: 1000px;
-  height: 600px;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 1;
-}
-
-/* 左侧毛玻璃卡片 */
-.login-left {
-  width: 420px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-right: none;
-  box-shadow: none;
-}
-
-.glass-card {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  padding: 56px 48px 44px;
-  border-radius: 0;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 45px rgba(29, 36, 90, 0.18);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.42), transparent 28%),
-      linear-gradient(120deg, rgba(255, 255, 255, 0.24), transparent 34%);
-    opacity: 0.75;
-  }
-
-  > * {
-    position: relative;
-    z-index: 1;
-  }
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 30px;
-
-  .logo-icon {
-    color: #fff;
-    margin-bottom: 10px;
-  }
-
-  .title {
-    color: #fff;
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 6px;
-    letter-spacing: 4px;
-  }
-
-  .subtitle {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-    letter-spacing: 1px;
-  }
-}
-
-.role-tabs {
-  margin-bottom: 20px;
-
-  :deep(.el-tabs__nav-wrap::after) {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  :deep(.el-tabs__item) {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-
-    &.is-active {
-      color: #fff;
-    }
-  }
-
-  :deep(.el-tabs__active-bar) {
-    background: #fff;
-  }
-}
-
-.login-form {
-  .custom-input {
-    :deep(.el-input__wrapper) {
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: none;
-      border-radius: 10px;
-      padding: 4px 15px;
-
-      &.is-focus {
-        border-color: rgba(255, 255, 255, 0.5);
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
-      }
-    }
-
-    :deep(.el-input__inner) {
-      color: #fff;
-      height: 42px;
-
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-      }
-    }
-
-    :deep(.el-input__icon) {
-      color: rgba(255, 255, 255, 0.7);
-    }
-  }
-}
-
-.login-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 16px 0 24px;
-
-  :deep(.el-checkbox__label) {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 13px;
-  }
-
-  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background-color: #fff;
-    border-color: #fff;
-  }
-
-  :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
-    color: #fff;
-  }
-
-  .default-pwd {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
-  }
-}
-
-.login-btn {
-  width: 100%;
-  height: 46px;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 4px;
-  background: linear-gradient(90deg, #fff 0%, #f0f0f0 100%);
-  color: #667eea;
-  border: none;
-  transition: all 0.3s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    background: #fff;
-  }
-}
-
-.login-footer {
-  margin-top: 30px;
-  text-align: center;
-
-  p {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 12px;
-  }
-}
-
-/* 右侧主题区 */
-.login-right {
-  flex: 1;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.floating-shapes {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-
-  .shape {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.4;
-    animation: pulse 6s ease-in-out infinite;
-  }
-
-  .shape-1 {
-    width: 300px;
-    height: 300px;
-    background: #667eea;
-    top: -50px;
-    right: -50px;
-    animation-delay: 0s;
-  }
-
-  .shape-2 {
-    width: 200px;
-    height: 200px;
-    background: #764ba2;
-    bottom: 50px;
-    left: 50px;
-    animation-delay: 2s;
-  }
-
-  .shape-3 {
-    width: 150px;
-    height: 150px;
-    background: #f093fb;
-    top: 50%;
-    right: 20%;
-    animation-delay: 4s;
-  }
-
-  .shape-4 {
-    width: 250px;
-    height: 250px;
-    background: #4facfe;
-    bottom: -80px;
-    right: 30%;
-    animation-delay: 1s;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.4;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.6;
-  }
-}
-
-.right-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 40px;
-}
-
-.right-text {
-  h2 {
-    color: #fff;
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 16px;
-    background: linear-gradient(90deg, #667eea 0%, #f093fb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    line-height: 1.8;
-    margin-bottom: 30px;
-    max-width: 400px;
-  }
-}
-
-.feature-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-
-  .tag {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
-    transition: all 0.3s;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-    }
-  }
+.contact-detail-enter-to,
+.contact-detail-leave-from {
+  max-width: 240px;
 }
 </style>

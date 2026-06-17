@@ -162,6 +162,57 @@
               </div>
             </el-card>
           </el-col>
+          <el-col :span="8">
+            <el-card class="permanent-card typing-card" shadow="hover" @click="goTyping">
+              <div class="permanent-content">
+                <div class="permanent-icon">
+                  <el-icon size="32" color="#fff"><EditPen /></el-icon>
+                </div>
+                <div class="permanent-info">
+                  <h4>盲打训练营</h4>
+                  <p>20关英语段落打字训练，按速度和准确率评分</p>
+                  <div class="permanent-meta">
+                    <el-tag size="small" type="primary">今日剩余 {{ typingRemaining }}/5 次</el-tag>
+                  </div>
+                </div>
+                <el-button type="primary" round size="small">去挑战</el-button>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card class="permanent-card tetris-card" shadow="hover" @click="goTetris">
+              <div class="permanent-content">
+                <div class="permanent-icon">
+                  <span style="font-size: 28px">▦</span>
+                </div>
+                <div class="permanent-info">
+                  <h4>俄罗斯方块</h4>
+                  <p>高速下落、连消加成，考验反应和空间规划</p>
+                  <div class="permanent-meta">
+                    <el-tag size="small" type="primary">今日剩余 {{ tetrisRemaining }}/5 次</el-tag>
+                  </div>
+                </div>
+                <el-button type="primary" round size="small">去挑战</el-button>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card class="permanent-card riddle-card" shadow="hover" @click="goLanternRiddle">
+              <div class="permanent-content">
+                <div class="permanent-icon">
+                  <span style="font-size: 28px">谜</span>
+                </div>
+                <div class="permanent-info">
+                  <h4>猜灯谜</h4>
+                  <p>高难十连问，提示会扣分，连对有额外加成</p>
+                  <div class="permanent-meta">
+                    <el-tag size="small" type="danger">今日剩余 {{ riddleRemaining }}/5 次</el-tag>
+                  </div>
+                </div>
+                <el-button type="primary" round size="small">去挑战</el-button>
+              </div>
+            </el-card>
+          </el-col>
         </el-row>
 
         <!-- 普通活动 -->
@@ -493,6 +544,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Star, Reading, Grid, Trophy, Connection, Football, Search, Plus, Location, Clock, User, EditPen } from '@element-plus/icons-vue'
 import {
   getActivities, applyActivity, getMyActivities,
   createActivity, getOrganizedActivities, getOrganizedParticipants, reviewOrganizedParticipant,
@@ -519,6 +571,9 @@ const doudizhuRemaining = ref(5)
 const idiomRemaining = ref(5)
 const sokobanRemaining = ref(5)
 const snakeRemaining = ref(5)
+const typingRemaining = ref(5)
+const tetrisRemaining = ref(5)
+const riddleRemaining = ref(5)
 
 const leaderboard = ref([])
 const myRankData = ref(null)
@@ -611,6 +666,9 @@ const loadTodayStatus = async () => {
     idiomRemaining.value = Math.max(0, 5 - (gameData?.idiom || 0))
     sokobanRemaining.value = Math.max(0, 5 - (gameData?.sokoban || 0))
     snakeRemaining.value = Math.max(0, 5 - (gameData?.snake || 0))
+    typingRemaining.value = Math.max(0, 5 - (gameData?.typing || 0))
+    tetrisRemaining.value = Math.max(0, 5 - (gameData?.tetris || 0))
+    riddleRemaining.value = Math.max(0, 5 - (gameData?.lantern_riddle || 0))
   } catch (e) {}
 }
 
@@ -789,6 +847,9 @@ const goDoudizhu = () => router.push('/student/doudizhu')
 const goIdiom = () => router.push('/student/idiom')
 const goSokoban = () => router.push('/student/sokoban')
 const goSnake = () => router.push('/student/snake')
+const goTyping = () => router.push('/student/typing')
+const goTetris = () => router.push('/student/tetris')
+const goLanternRiddle = () => router.push('/student/lantern-riddle')
 
 onMounted(() => {
   loadActivities()
@@ -848,10 +909,10 @@ onMounted(() => {
       }
     }
     .word-card .permanent-icon {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
     }
     .mine-card .permanent-icon {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      background: linear-gradient(135deg, #38bdf8 0%, #f5576c 100%);
     }
     .sudoku-card .permanent-icon {
       background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
@@ -873,6 +934,19 @@ onMounted(() => {
     }
     .snake-card .permanent-icon {
       background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
+    }
+    .typing-card .permanent-icon {
+      background: linear-gradient(135deg, #1f7a8c 0%, #38bdf8 100%);
+    }
+    .tetris-card .permanent-icon {
+      background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+      color: #fff;
+      font-weight: 900;
+    }
+    .riddle-card .permanent-icon {
+      background: linear-gradient(135deg, #f43f5e 0%, #f59e0b 100%);
+      color: #fff;
+      font-weight: 900;
     }
   }
 

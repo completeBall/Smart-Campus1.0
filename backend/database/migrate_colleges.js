@@ -341,13 +341,13 @@ async function migrate() {
     console.log('Jobs data already exists, skip seeding');
   }
 
-  // 8. 扩展 game_records.game_type 枚举: sokoban, idiom, snake
+  // 8. 扩展 game_records.game_type 枚举: sokoban, idiom, snake, typing
   try {
     await conn.execute(`
       ALTER TABLE game_records
-      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL
+      MODIFY COLUMN game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake','typing','tetris','lantern_riddle') NOT NULL
     `);
-    console.log('Extended game_records.game_type ENUM with sokoban, idiom, snake');
+    console.log('Extended game_records.game_type ENUM with sokoban, idiom, snake, typing, tetris, lantern_riddle');
   } catch (e) {
     // 如果 ENUM 已经包含这些值或者表不存在，忽略
     if (e.code !== 'ER_DUP_FIELDNAME' && !e.message.includes('Duplicate')) {

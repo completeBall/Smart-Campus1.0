@@ -7,7 +7,7 @@ const { dbConfig } = require('./config/db');
     CREATE TABLE IF NOT EXISTS game_records (
       id INT AUTO_INCREMENT PRIMARY KEY,
       student_id INT NOT NULL,
-      game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL,
+      game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake','typing','tetris','lantern_riddle') NOT NULL,
       score INT DEFAULT 0,
       level VARCHAR(20) DEFAULT 'easy',
       play_time INT DEFAULT 0 COMMENT '完成用时(秒)',

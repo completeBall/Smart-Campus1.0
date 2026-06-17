@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS activity_participants (
 -- 加分申请记录表（组织者提交→教师审核→才加分）
 CREATE TABLE IF NOT EXISTS activity_score_records (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  activity_id INT NOT NULL,
+  activity_id INT DEFAULT NULL COMMENT '关联活动ID，系统加分可为空',
   student_id INT NOT NULL COMMENT '被加分的学生',
   participant_id INT DEFAULT NULL COMMENT '关联的报名记录ID',
   score_type ENUM('academic','moral','sports','arts','labor') NOT NULL,
@@ -238,6 +238,38 @@ CREATE TABLE IF NOT EXISTS activity_score_records (
   source_type VARCHAR(20) DEFAULT 'activity' COMMENT 'activity=活动加分, system=系统加分',
   FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
   FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 插入默认管理员
+CREATE TABLE IF NOT EXISTS youth_creation_posts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  province_code VARCHAR(12) NOT NULL,
+  province_name VARCHAR(50) NOT NULL,
+    city_code VARCHAR(12) NOT NULL,
+    city_name VARCHAR(50) NOT NULL,
+    author_name VARCHAR(50) DEFAULT NULL,
+    content TEXT NOT NULL,
+    images JSON DEFAULT NULL,
+    status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+    reviewed_by INT DEFAULT NULL,
+    reviewed_at DATETIME DEFAULT NULL,
+    review_note VARCHAR(255) DEFAULT NULL,
+    like_count INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_youth_region (province_code, city_code, created_at),
+    INDEX idx_youth_status (status, created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+CREATE TABLE IF NOT EXISTS youth_creation_likes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT NOT NULL,
+  user_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_youth_like (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES youth_creation_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 插入默认管理员
@@ -388,7 +420,7 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
 CREATE TABLE IF NOT EXISTS game_records (
   id INT AUTO_INCREMENT PRIMARY KEY,
   student_id INT NOT NULL,
-  game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake') NOT NULL,
+  game_type ENUM('minesweeper','sudoku','chess','gomoku','doudizhu','sokoban','idiom','snake','typing','tetris','lantern_riddle') NOT NULL,
   score INT DEFAULT 0,
   level VARCHAR(20) DEFAULT 'easy',
   play_time INT DEFAULT 0 COMMENT '完成用时(秒)',

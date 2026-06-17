@@ -154,7 +154,8 @@ onMounted(loadData)
 
         :deep(.el-card__header) {
           padding: 12px 16px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-bottom: 1px solid #e2e8f0;
+          background: #f8fafc;
           border-radius: 10px 10px 0 0;
         }
 
@@ -162,8 +163,20 @@ onMounted(loadData)
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #fff;
+          color: #0a1b33;
           font-weight: 600;
+
+          .el-icon {
+            width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #123e81;
+            border-radius: 50%;
+            background: #eaf1fb;
+          }
         }
 
         .major-name {

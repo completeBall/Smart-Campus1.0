@@ -150,7 +150,7 @@ loadData()
       margin-bottom: 12px;
 
       .el-avatar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
         color: #fff;
         font-size: 24px;
         font-weight: bold;
@@ -168,7 +168,7 @@ loadData()
       .signature {
         margin: 4px 0 8px;
         font-size: 12px;
-        color: #667eea;
+        color: #123e81;
         font-style: italic;
         line-height: 1.4;
         max-height: 32px;

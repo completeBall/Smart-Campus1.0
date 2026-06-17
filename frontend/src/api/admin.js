@@ -16,6 +16,10 @@ export const getCollegesMajors = () => request.get('/admin/colleges-majors')
 export const getAiSettings = () => request.get('/admin/ai-settings')
 export const saveAiSettings = (data) => request.put('/admin/ai-settings', data)
 export const testAiSettings = (data) => request.post('/admin/ai-settings/test', data, { timeout: 70000 })
+export const getAdminYouthRegions = () => request.get('/admin/youth-creation/regions', { silent: true })
+export const getAdminYouthPosts = (params) => request.get('/admin/youth-creation/posts', { params, silent: true })
+export const approveYouthPost = (id) => request.put(`/admin/youth-creation/posts/${id}/approve`, null, { silent: true })
+export const deleteYouthPost = (id) => request.delete(`/admin/youth-creation/posts/${id}`, { silent: true })
 
 // 下载用户导入模板
 export const downloadUserTemplate = () => {

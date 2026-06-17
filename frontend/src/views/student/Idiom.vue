@@ -219,7 +219,7 @@ onMounted(loadToday)
             justify-content: center;
             font-size: 28px;
             font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
             color: #fff;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);

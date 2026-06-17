@@ -127,7 +127,7 @@ loadData()
         border-radius: 8px;
         .reply-label {
           font-weight: 500;
-          color: #667eea;
+          color: #123e81;
           margin-bottom: 6px;
         }
         .reply-content {

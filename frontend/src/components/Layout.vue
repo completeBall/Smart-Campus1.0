@@ -3,16 +3,25 @@
     <el-container>
       <el-aside width="220px" class="sidebar">
         <div class="logo">
-          <el-icon size="28"><School /></el-icon>
-          <span>智慧校园1.0</span>
+          <button
+            ref="themeToggleRef"
+            type="button"
+            class="logo-mark"
+            :aria-label="isDarkTheme ? '切换到浅色主题' : '切换到深色主题'"
+            :title="isDarkTheme ? '切换到浅色主题' : '切换到深色主题'"
+            @click="toggleTheme"
+            >
+              <img src="/logos/campus-bird.png" alt="智慧校园">
+            </button>
+          <div class="logo-copy">
+            <span>智慧校园</span>
+            <small>SMART CAMPUS 2.0</small>
+          </div>
         </div>
         <el-menu
           :default-active="activeMenu"
           router
           class="sidebar-menu"
-          background-color="#1a1a2e"
-          text-color="#b8c5d6"
-          active-text-color="#fff"
         >
           <!-- 管理员菜单 -->
           <template v-if="userStore.userInfo.role === 'admin'">
@@ -39,6 +48,10 @@
             <el-menu-item index="/admin/ai-settings">
               <el-icon><Connection /></el-icon>
               <span>AI 设置</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/youth-creation">
+              <el-icon><Location /></el-icon>
+              <span>青年共创审核</span>
             </el-menu-item>
           </template>
 
@@ -132,6 +145,10 @@
               <el-icon><Football /></el-icon>
               <span>活动广场</span>
             </el-menu-item>
+            <el-menu-item index="/student/youth-creation">
+              <el-icon><Location /></el-icon>
+              <span>青年共创</span>
+            </el-menu-item>
             <el-menu-item index="/student/classmates">
               <el-icon><User /></el-icon>
               <span>我的同学</span>
@@ -169,6 +186,19 @@
             </el-breadcrumb>
           </div>
           <div class="header-right">
+            <button
+              type="button"
+              class="weather-pill"
+              :class="{ loading: weather.loading }"
+              :title="weather.error || '点击刷新实时天气'"
+              @click="loadWeather(true)"
+            >
+              <span class="weather-icon" aria-hidden="true">{{ weather.icon }}</span>
+              <span class="weather-copy">
+                <strong>{{ weather.loading ? '获取天气' : `${weather.temperature}°` }}</strong>
+                <small>{{ weather.label }} · {{ weather.location }}</small>
+              </span>
+            </button>
             <el-dropdown @command="handleCommand">
               <span class="user-info">
                 <el-avatar :size="32" :src="userStore.userInfo.avatar" class="user-avatar">
@@ -220,7 +250,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, reactive, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -234,12 +264,141 @@ const userStore = useUserStore()
 const passwordVisible = ref(false)
 const passwordRef = ref()
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const themeToggleRef = ref()
+const isDarkTheme = ref(document.documentElement.dataset.theme === 'dark')
+const weather = reactive({
+  loading: true,
+  temperature: '--',
+  label: '实时天气',
+  icon: '☀️',
+  location: '当前位置',
+  error: ''
+})
 
 const unreadTotal = ref(0)
 const hasActiveAttendance = ref(false)
 let pollTimer = null
 
+const WEATHER_CODES = {
+  0: ['晴朗', '☀️'],
+  1: ['大部晴朗', '🌤️'],
+  2: ['多云', '⛅'],
+  3: ['阴天', '☁️'],
+  45: ['有雾', '🌫️'],
+  48: ['雾凇', '🌫️'],
+  51: ['小毛雨', '🌦️'],
+  53: ['毛毛雨', '🌦️'],
+  55: ['较强毛雨', '🌧️'],
+  61: ['小雨', '🌦️'],
+  63: ['中雨', '🌧️'],
+  65: ['大雨', '🌧️'],
+  71: ['小雪', '🌨️'],
+  73: ['中雪', '🌨️'],
+  75: ['大雪', '❄️'],
+  80: ['阵雨', '🌦️'],
+  81: ['较强阵雨', '🌧️'],
+  82: ['强阵雨', '⛈️'],
+  95: ['雷雨', '⛈️'],
+  96: ['雷雨冰雹', '⛈️'],
+  99: ['强雷雨冰雹', '⛈️']
+}
+
+const getWeatherPosition = (force = false) => new Promise((resolve) => {
+  const cached = localStorage.getItem('campus-weather-position')
+  if (!force && cached) {
+    try {
+      const position = JSON.parse(cached)
+      if (Date.now() - position.savedAt < 6 * 60 * 60 * 1000) {
+        resolve(position)
+        return
+      }
+    } catch (e) {
+      localStorage.removeItem('campus-weather-position')
+    }
+  }
+
+  if (!navigator.geolocation) {
+    resolve({ latitude: 39.9042, longitude: 116.4074, location: '北京' })
+    return
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      const position = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        location: '当前位置',
+        savedAt: Date.now()
+      }
+      localStorage.setItem('campus-weather-position', JSON.stringify(position))
+      resolve(position)
+    },
+    () => resolve({ latitude: 39.9042, longitude: 116.4074, location: '北京' }),
+    { enableHighAccuracy: false, timeout: 5000, maximumAge: 30 * 60 * 1000 }
+  )
+})
+
+const loadWeather = async (force = false) => {
+  weather.loading = true
+  weather.error = ''
+  try {
+    const position = await getWeatherPosition(force)
+    const params = new URLSearchParams({
+      latitude: position.latitude,
+      longitude: position.longitude,
+      current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m',
+      timezone: 'auto'
+    })
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`)
+    if (!response.ok) throw new Error('天气服务暂时不可用')
+    const data = await response.json()
+    const current = data.current || {}
+    const [label, icon] = WEATHER_CODES[current.weather_code] || ['实时天气', '🌤️']
+    weather.temperature = Math.round(current.temperature_2m)
+    weather.label = label
+    weather.icon = icon
+    weather.location = position.location
+  } catch (error) {
+    weather.error = error.message || '天气加载失败，点击重试'
+    weather.label = '点击重试'
+    weather.icon = '🌤️'
+  } finally {
+    weather.loading = false
+  }
+}
+
 const activeMenu = computed(() => route.path)
+
+const applyTheme = (theme) => {
+  document.documentElement.dataset.theme = theme
+  localStorage.setItem('campus-theme', theme)
+  isDarkTheme.value = theme === 'dark'
+}
+
+const toggleTheme = async (event) => {
+  const nextTheme = isDarkTheme.value ? 'light' : 'dark'
+  const rect = themeToggleRef.value?.getBoundingClientRect()
+  const x = event?.clientX || (rect ? rect.left + rect.width / 2 : 0)
+  const y = event?.clientY || (rect ? rect.top + rect.height / 2 : 0)
+  const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  if (!document.startViewTransition || reduceMotion) {
+    applyTheme(nextTheme)
+    return
+  }
+
+  const transition = document.startViewTransition(() => applyTheme(nextTheme))
+  await transition.ready
+  document.documentElement.animate(
+    { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+    {
+      duration: 720,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      pseudoElement: '::view-transition-new(root)'
+    }
+  )
+}
 
 const refreshUnread = async () => {
   try {
@@ -314,6 +473,7 @@ const pageTitle = computed(() => {
     '/student/leave': '请假申请',
     '/student/assessment': '综测分数',
     '/student/activities': '活动广场',
+    '/student/youth-creation': '青年共创',
     '/student/classmates': '我的同学',
     '/student/friends': '我的好友',
     '/student/chat': '聊天',
@@ -373,6 +533,7 @@ const submitPassword = async () => {
 
 onMounted(() => {
   refreshAll()
+  loadWeather()
   pollTimer = setInterval(refreshAll, 10000)
 })
 
@@ -384,33 +545,90 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .layout {
   min-height: 100vh;
+  background: #f9fafb;
 }
 
 .sidebar {
-  background: #1a1a2e;
-  height: 100vh;
+  width: 220px !important;
+  height: calc(100vh - 24px);
   position: fixed;
-  left: 0;
-  top: 0;
+  left: 12px;
+  top: 12px;
   z-index: 100;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: 28px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(24px);
 
   .logo {
-    height: 60px;
+    min-height: 88px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 20px;
-    font-weight: bold;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    gap: 10px;
+    padding: 0 18px;
+    gap: 12px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+
+    .logo-mark {
+      appearance: none;
+      padding: 0;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+      cursor: pointer;
+      position: relative;
+      transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+
+      &:hover {
+        transform: scale(1.06) rotate(-3deg);
+        border-color: #cbd9ed;
+        box-shadow: 0 11px 26px rgba(18, 62, 129, 0.14);
+      }
+
+      &:active {
+        transform: scale(0.96);
+      }
+
+      img {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
+      }
+
+    }
+
+    .logo-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
     span {
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #0a1b33;
+      font-family: "Outfit", "Microsoft YaHei", sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    small {
+      color: #94a3b8;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
     }
   }
 }
@@ -418,40 +636,149 @@ onBeforeUnmount(() => {
 .sidebar-menu {
   border-right: none;
   flex: 1;
+  padding: 12px 10px 18px;
   overflow-y: auto;
   overflow-x: hidden;
+  background: transparent;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
+    background: #dbe2ea;
     border-radius: 6px;
   }
 }
 
-:deep(.el-menu-item:hover) {
-  background: rgba(102, 126, 234, 0.15) !important;
+:deep(.sidebar-menu .el-menu-item) {
+  height: 48px;
+  margin: 3px 0;
+  padding: 0 14px !important;
+  color: #64748b;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+
+  .el-icon {
+    margin-right: 12px;
+    color: #94a3b8;
+    font-size: 18px;
+    transition: color 180ms ease;
+  }
 }
 
-:deep(.el-menu-item.is-active) {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+:deep(.sidebar-menu .el-menu-item:hover) {
+  color: #0a1b33 !important;
+  background: #f1f5f9 !important;
+  transform: translateX(2px);
+
+  .el-icon {
+    color: #0a1b33;
+  }
+}
+
+:deep(.sidebar-menu .el-menu-item.is-active) {
+  color: #0a1b33 !important;
+  background: #f5f8fc !important;
+  border: 1px solid #dbe5f2;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+
+  .el-icon {
+    width: 28px;
+    height: 28px;
+    margin-left: -6px;
+    margin-right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #123e81;
+    border-radius: 50%;
+    background: #eaf1fb;
+  }
 }
 
 .header {
-  background: #fff;
+  height: 72px;
+  background: rgba(249, 250, 251, 0.88);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  backdrop-filter: blur(18px);
   position: sticky;
   top: 0;
   z-index: 99;
-  margin-left: 220px;
+  margin-left: 244px;
 }
 
 .header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .weather-pill {
+    appearance: none;
+    min-width: 154px;
+    height: 46px;
+    padding: 6px 13px 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #0a1b33;
+    border: 1px solid #dfe7f1;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: #c4d3e6;
+      box-shadow: 0 11px 28px rgba(18, 62, 129, 0.1);
+    }
+
+    &.loading .weather-icon {
+      animation: weather-pulse 1s ease-in-out infinite;
+    }
+  }
+
+  .weather-icon {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 32px;
+    font-size: 20px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #eaf3ff, #f7fbff);
+  }
+
+  .weather-copy {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+    text-align: left;
+
+    strong {
+      color: inherit;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    small {
+      max-width: 104px;
+      overflow: hidden;
+      color: #718096;
+      font-size: 10px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
   .user-info {
     display: flex;
     align-items: center;
@@ -462,12 +789,12 @@ onBeforeUnmount(() => {
     transition: background 0.3s;
 
     &:hover {
-      background: #f5f5f5;
+      background: #fff;
     }
   }
 
   .user-avatar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0a152d;
     color: #fff;
     font-weight: bold;
   }
@@ -478,11 +805,15 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes weather-pulse {
+  50% { transform: scale(0.88); opacity: 0.62; }
+}
+
 .main-content {
-  margin-left: 220px;
-  background: #f0f2f5;
-  min-height: calc(100vh - 60px);
-  padding: 20px;
+  margin-left: 244px;
+  background: #f9fafb;
+  min-height: calc(100vh - 72px);
+  padding: 24px;
 }
 
 .fade-enter-active,
@@ -505,7 +836,30 @@ onBeforeUnmount(() => {
   }
   :deep(.el-badge__content) {
     border: none;
-    box-shadow: 0 0 0 1px #1a1a2e;
+    box-shadow: 0 0 0 2px #fff;
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    left: 8px;
+    top: 8px;
+    width: 196px !important;
+    height: calc(100vh - 16px);
+    border-radius: 24px;
+
+    .logo {
+      padding: 0 14px;
+    }
+  }
+
+  .header,
+  .main-content {
+    margin-left: 212px;
+  }
+
+  .main-content {
+    padding: 18px;
   }
 }
 </style>

@@ -342,7 +342,7 @@ onMounted(fetchProfile)
 }
 
 .profile-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #123e81 0%, #0a152d 100%);
   color: #fff;
   font-size: 36px;
   font-weight: bold;
@@ -358,8 +358,22 @@ onMounted(fetchProfile)
     display: inline-block;
     .bg-remove {
       position: absolute;
-      top: 6px;
-      right: 6px;
+      top: 8px;
+      right: 8px;
+      width: 72px !important;
+      min-width: 72px !important;
+      height: 32px !important;
+      min-height: 32px !important;
+      padding: 0 12px !important;
+      border-radius: 999px !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: #fff;
+      border: 2px solid #fff;
+      background: #ef6468;
+      box-shadow: 0 5px 14px rgba(239, 100, 104, 0.28);
     }
   }
 }
@@ -374,8 +388,20 @@ onMounted(fetchProfile)
       position: relative;
       .photo-remove {
         position: absolute;
-        top: -6px;
-        right: -6px;
+        top: -8px;
+        right: -8px;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        color: #fff;
+        border: 2px solid #fff;
+        background: #ef6468;
+        box-shadow: 0 5px 14px rgba(239, 100, 104, 0.28);
       }
     }
   }

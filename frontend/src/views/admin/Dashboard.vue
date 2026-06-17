@@ -63,8 +63,8 @@ import { getStatistics, getLogs } from '@/api/admin'
 
 const router = useRouter()
 const stats = ref([
-  { title: '学生总数', value: 0, icon: 'User', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { title: '教师总数', value: 0, icon: 'UserFilled', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  { title: '学生总数', value: 0, icon: 'User', gradient: 'linear-gradient(135deg, #123e81 0%, #0a152d 100%)' },
+  { title: '教师总数', value: 0, icon: 'UserFilled', gradient: 'linear-gradient(135deg, #38bdf8 0%, #f5576c 100%)' },
   { title: '任务总数', value: 0, icon: 'Document', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
   { title: '待处理反馈', value: 0, icon: 'ChatDotRound', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
 ])
@@ -91,7 +91,7 @@ const initCharts = () => {
     xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
     yAxis: { type: 'value' },
     series: [
-      { name: '登录次数', type: 'bar', data: [120, 132, 101, 134, 90, 230, 210], itemStyle: { color: '#667eea', borderRadius: [4, 4, 0, 0] } },
+      { name: '登录次数', type: 'bar', data: [120, 132, 101, 134, 90, 230, 210], itemStyle: { color: '#123e81', borderRadius: [4, 4, 0, 0] } },
       { name: '新增用户', type: 'line', data: [22, 18, 19, 23, 29, 33, 31], smooth: true, itemStyle: { color: '#f5576c' } }
     ]
   })
@@ -107,7 +107,7 @@ const initCharts = () => {
       itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
       label: { show: false },
       data: [
-        { value: stats.value[0].value || 50, name: '学生', itemStyle: { color: '#667eea' } },
+        { value: stats.value[0].value || 50, name: '学生', itemStyle: { color: '#123e81' } },
         { value: stats.value[1].value || 10, name: '教师', itemStyle: { color: '#f5576c' } },
         { value: 1, name: '管理员', itemStyle: { color: '#43e97b' } }
       ]
