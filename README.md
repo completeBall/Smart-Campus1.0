@@ -1,234 +1,241 @@
-# 智慧校园管理系统————————————————————————
+# 智慧校园管理系统
 
-> 基于 Vue 3 + Node.js + Express + MySQL 的全栈 Web 应用，支持管理员、教师、学生三端协同工作。
+基于 Vue 3、Node.js、Express 和 MySQL 的智慧校园 Web 应用，面向管理员、教师、学生三类角色，覆盖教学管理、校园社交、活动综测、AI 助手、招聘信息、考勤请假等校园场景。
 
 ## 项目简介
 
-本项目是为 Web 应用与开发比赛设计的智慧校园管理系统，覆盖校园日常教学、管理、交流、活动等核心场景。系统分为三个角色端：管理员端、教师端和学生端，默认登录密码为 **123456**。
+本项目采用前后端分离架构：
+
+- 前端提供三端统一布局、浅色/深色主题、路由鉴权、文件上传、实时交互式页面。
+- 后端提供 REST API、JWT 登录鉴权、MySQL 自动建库和迁移、上传文件静态服务。
+- 数据库迁移在后端启动时自动执行，首次运行会初始化表结构和演示数据。
 
 ## 技术栈
 
 | 层级 | 技术 |
-|------|------|
-| 前端 | Vue 3 + Vite + Element Plus + Vue Router + Pinia + Axios + ECharts + Sass |
-| 后端 | Node.js + Express + MySQL2 + JWT + bcryptjs + multer + dayjs |
-| 数据库 | MySQL 8.0 |
+| --- | --- |
+| 前端 | Vue 3、Vite、Vue Router、Pinia、Element Plus、Axios、ECharts、Sass、Tailwind CSS |
+| 后端 | Node.js、Express、MySQL2、JWT、bcryptjs、multer、dayjs、xlsx |
+| 数据库 | MySQL 8.x |
+| 工具脚本 | Windows batch、PowerShell |
 
 ## 项目结构
 
-```
+```text
 smart-campus/
-├── backend/              # 后端服务
-│   ├── config/           # 数据库配置
-│   ├── middleware/       # JWT 认证中间件
-│   ├── routes/           # API 路由
-│   ├── database/         # 数据库初始化与迁移脚本
-│   ├── uploads/          # 文件上传目录
-│   ├── app.js            # 入口文件
+├── backend/                 # 后端服务
+│   ├── app.js               # Express 入口
+│   ├── config/              # 数据库配置
+│   ├── database/            # init.sql 与迁移脚本
+│   ├── middleware/          # 鉴权中间件
+│   ├── routes/              # auth/admin/teacher/student/social/profile API
+│   ├── services/            # 业务服务
+│   ├── uploads/             # 上传文件目录
 │   └── package.json
-├── frontend/             # 前端项目
+├── frontend/                # 前端项目
 │   ├── src/
-│   │   ├── api/          # 接口封装
-│   │   ├── components/   # 公共组件
-│   │   ├── router/       # 路由配置
-│   │   ├── stores/       # Pinia 状态管理
-│   │   ├── views/        # 页面视图
-│   │   │   ├── login/    # 登录页
-│   │   │   ├── admin/    # 管理员端
-│   │   │   ├── teacher/  # 教师端
-│   │   │   ├── student/  # 学生端
-│   │   │   ├── social/   # 社交功能
-│   │   │   └── profile/  # 个人中心
-│   │   ├── App.vue
-│   │   └── main.js
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── start.bat             # Windows 一键启动脚本
-├── start.ps1             # PowerShell 启动脚本
+│   │   ├── api/             # Axios API 封装
+│   │   ├── components/      # 公共布局组件
+│   │   ├── router/          # 路由和角色守卫
+│   │   ├── stores/          # Pinia 状态
+│   │   └── views/           # admin/teacher/student/social/profile 页面
+│   ├── vite.config.js       # Vite 配置与代理
+│   └── package.json
+├── start.bat                # Windows 一键启动脚本
+├── start.ps1                # PowerShell 启动脚本
 └── README.md
 ```
 
 ## 功能模块
 
 ### 管理员端
-- **数据概览**：统计面板 + ECharts 可视化图表
-- **用户管理**：增删改查用户，重置密码，状态管理
-- **操作日志**：全站用户操作记录审计
-- **反馈管理**：查看并回复学生/教师反馈
-- **通知公告**：发布和管理公告
+
+- 数据概览：用户、任务、反馈等统计信息。
+- 用户管理：创建、编辑、禁用用户，重置密码。
+- 操作日志：查看系统操作记录。
+- 反馈管理：查看并回复用户反馈。
+- 通知公告：发布和维护校园公告。
+- AI 设置：配置学生端智能 AI 的服务参数和用量。
+- 青年共创审核：审核学生发布的青年共创内容。
 
 ### 教师端
-- **教学概览**：任务、学生、待批改统计 + 今日课程
-- **发布任务**：指定班级发布作业任务
-- **批改作业**：查看提交、评分、写评语，支持查看学生附件
-- **课程表**：可视化课程表，支持调课标记
-- **成绩管理**：录入和编辑学生成绩
-- **审批管理**：审核请假、活动、加分申请
-- **学生管理**：查看班级学生列表
-- **课堂签到**：创建限时签到会话（3分钟迟到截止，5分钟关闭）
-- **我的好友 / 聊天**：社交功能
-- **24小时状态**：设置心情状态，好友可见
+
+- 教师首页：教学任务、学生、待批改、今日课程概览。
+- 任务发布：给班级发布作业任务。
+- 作业批改：查看提交内容、附件、评分和评语。
+- 课程表：查看和维护教师课程安排，可发起课堂签到。
+- 成绩管理：录入、编辑和查询学生成绩。
+- 审批管理：处理请假、活动、综测加分等申请。
+- 学生管理：查看班级学生列表。
+- 签到详情：查看课堂签到会话和学生出勤状态。
+- 社交功能：好友、私聊、群聊、个人主页、24 小时状态。
 
 ### 学生端
-- **首页**：任务统计、今日课程、学习日历、学习备忘录、待完成作业、24小时状态
-- **我的作业**：查看任务、提交作答（支持文本+附件上传）、查看成绩
-- **课程表**：个人班级课程表查看
-- **成绩查询**：各科成绩一览
-- **综测分数**：智育/德育/体育/美育/劳育五维评分 + 排行榜 + 加分明细
-- **校园论坛**：发帖、回复、点赞、热帖排行
-- **企业招聘**：浏览招聘信息
-- **考勤记录**：出勤/缺勤/迟到/请假记录，课堂签到
-- **请假申请**：向教师提交请假
-- **活动广场**：浏览活动、报名参与、发起活动
-- **每日背单词**：每天3次挑战，答满50题且正确率>=80%可加智育分
-- **我的同学**：班级同学列表，访问个人主页
-- **我的好友 / 聊天**：好友申请、私聊、群聊
-- **学院专业**：浏览院校和专业信息
-- **意见反馈**：向管理员提交反馈
-- **个人中心**：头像、背景图、精选照片、个性签名、24小时状态
-- **内置小游戏**：
-  - 扫雷、数独、象棋、五子棋
-  - 斗地主、成语游戏
-  - 推箱子、贪吃蛇
+
+- 首页：任务统计、待完成作业、学习日历、今日课程、学习备忘录、生日设置。
+- 我的作业：查看任务，提交文本和附件，查看批改结果。
+- 课程表：查看个人课程安排。
+- 成绩查询：查看课程成绩。
+- 校园论坛：发帖、回复、点赞、图片/附件上传。
+- 企业招聘：浏览岗位、筛选分类、查看招聘详情。
+- 考勤记录：查看出勤、迟到、缺勤、请假记录，并完成课堂签到。
+- 请假申请：提交请假并查看审批记录。
+- 综测分数：展示智育、德育、体育、美育、劳育总分、排名和加分明细。
+- 活动广场：浏览活动、报名活动、发起活动、提交加分名单。
+- 青年共创：围绕城市/区域发布图文分享并等待审核。
+- 每日背单词：单词练习和学习加分。
+- 智能 AI：学生端聊天助手，支持使用后台配置的模型服务。
+- 我的同学：查看班级同学和个人主页。
+- 学院专业：浏览学院与专业介绍。
+- 意见反馈：向管理员提交反馈并查看回复。
+- 社交功能：好友申请、私聊、群聊、个人资料、头像/背景图/精选照片。
+- 内置小游戏：扫雷、数独、象棋、五子棋、斗地主、成语游戏、推箱子、贪吃蛇、俄罗斯方块、打字练习、灯谜等。
 
 ## 快速启动
 
-### 1. 环境要求
-- Node.js >= 16
-- MySQL >= 8.0（确保 MySQL 服务已启动）
+### 环境要求
 
-### 2. 配置数据库连接
+- Node.js 16+
+- MySQL 8.x
+- npm
+
+### 1. 配置后端
+
 ```bash
 cd backend
 npm install
-
-# 复制环境变量模板并修改为你的 MySQL 配置
 copy .env.example .env
-# 编辑 .env，修改 DB_HOST、DB_USER、DB_PASSWORD 等
 ```
 
-**注意：首次启动时会自动创建数据库并执行所有迁移，无需手动运行 init.sql。**
+按本机 MySQL 修改 `backend/.env`：
 
-> **数据库密码修改指南**：如果你的 MySQL 密码不是 `123456`，需要修改以下 **2 个文件**：
->
-> | 文件 | 位置 | 说明 |
-> |------|------|------|
-> | `backend/.env.example` | 第 4 行 `DB_PASSWORD=123456` | 环境变量模板，改为你的 MySQL 密码 |
-> | `backend/config/db.js` | 第 8 行 `password: process.env.DB_PASSWORD \|\| '123456'` | 数据库连接配置中的默认值，将 `'123456'` 改为你的密码 |
->
-> 建议同时修改，确保无论是否配置 `.env` 文件都能正确连接数据库。
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=123456
+DB_NAME=smart_campus
+PORT=3000
+JWT_SECRET=smart-campus-secret-key-2024
+```
 
-### 3. 启动后端
+后端启动时会自动执行 `backend/database/migrate.js`，包括建库、初始化表和执行增量迁移。
+
+### 2. 启动后端
+
 ```bash
 cd backend
 npm start
-# 服务运行在 http://localhost:3000
-# 开发模式可使用 npm run dev（nodemon 热重载）
 ```
 
-### 4. 启动前端
+开发模式：
+
+```bash
+npm run dev
+```
+
+服务地址：`http://localhost:3000`
+
+健康检查：`http://localhost:3000/api/health`
+
+### 3. 启动前端
+
 ```bash
 cd frontend
 npm install
 npm run dev
-# 访问 http://localhost:5173
 ```
 
-### 5. Windows 一键启动（可选）
-在项目根目录执行：
+访问地址：`http://localhost:5173`
+
+Vite 已将 `/api` 和 `/uploads` 代理到 `http://localhost:3000`。
+
+### 4. 一键启动
+
+项目根目录提供 Windows 启动脚本：
+
 ```bash
-# 批处理方式
 start.bat
-
-# PowerShell 方式
-start.ps1
 ```
+
+或：
+
+```powershell
+.\start.ps1
+```
+
+## 构建
+
+```bash
+cd frontend
+npm run build
+```
+
+构建产物输出到 `frontend/dist/`。
 
 ## 默认账号
 
-| 角色 | 账号 | 密码 |
-|------|------|------|
+默认密码通常为 `123456`，具体账号由数据库初始化和迁移脚本写入。
+
+| 角色 | 示例账号 | 密码 |
+| --- | --- | --- |
 | 管理员 | taball | 123456 |
-| 教师 | teacher1 | 123456 |
-| 教师 | teacher2 | 123456 |
-| 学生 | student1 | 123456 |
-| 学生 | student2 | 123456 |
-| 学生 | student3 | 123456 |
-| 学生 | student4 | 123456 |
+| 教师 | teacher1 / teacher2 | 123456 |
+| 学生 | student1 / student2 / student3 / student4 | 123456 |
 
-## 核心功能说明
+## 接口概览
 
-### 作业提交与批改
-- 学生提交作业时支持上传附件（图片/PDF/Word/压缩包等，最大10MB）
-- 教师在批改弹窗中可直接查看并下载学生附件
+后端接口统一以 `/api` 开头：
 
-### 综测分数体系
-- **智育分**（60%）+ **德育分**（16%）+ **体育分**（8%）+ **美育分**（8%）+ **劳育分**（8%）
-- 参与活动、每日背单词等可获得对应类型的加分
-- 加分记录可在"加分明细"中查看审核状态
+| 路由前缀 | 说明 |
+| --- | --- |
+| `/api/auth` | 登录认证 |
+| `/api/admin` | 管理员统计、用户、日志、公告、反馈、AI 配置 |
+| `/api/teacher` | 教师任务、批改、课程、成绩、审批、签到 |
+| `/api/student` | 学生首页、作业、课程、论坛、活动、综测、AI、请假、考勤 |
+| `/api/social` | 好友、聊天、群聊、个人状态、用户公开主页 |
+| `/api/profile` | 当前用户资料、头像、背景、精选照片 |
+| `/api/upload/avatar` | 单张图片上传，头像/背景/照片使用 |
+| `/api/upload/image` | 论坛等多图片上传，最多 9 张 |
+| `/api/upload/file` | 普通附件上传 |
 
-### 社交功能
-- **24小时状态**：设置心情 emoji + 文字，24小时后自动消失
-- **好友系统**：搜索用户、发送申请、同意/拒绝、删除好友
-- **即时聊天**：私聊、群聊、未读消息红点提示
+## 上传限制
 
-### 活动广场加分流程
-1. 学生报名活动 -> 组织者审核通过
-2. 组织者提交加分名单 -> 教师审核通过
-3. 加分自动计入综测对应维度
+- 头像、背景图、精选照片：图片文件，最大 30MB。
+- 论坛图片：图片文件，最多 9 张，单次最大 30MB。
+- 普通附件：最大 10MB。
+- 上传文件通过 `/uploads/...` 静态访问。
 
-## 界面特色
+## 主题与界面
 
-- 登录页面采用**毛玻璃效果**，左侧为登录卡片，右侧为动态渐变主题区
-- 三端均采用深色侧边栏 + 卡片式内容区，现代简洁
-- 课程表采用网格布局，直观展示每周课程
-- 数据统计使用 ECharts 图表，信息可视化
-- 个人主页支持滚动查看完整背景图、精选照片墙
+- 全站支持浅色/深色模式。
+- 三端共用侧边栏布局和顶部面包屑。
+- 学生端包含学习日历、卡片式统计、空状态插画、活动/论坛/聊天等较完整交互。
+- 深色模式已对聊天、综测、请假、反馈、考勤、招聘、首页等页面做可读性适配。
 
-## 接口文档
+## 数据库迁移
 
-后端接口统一前缀 `/api`，主要路由：
+主要迁移文件位于 `backend/database/`：
 
-| 路由 | 说明 |
-|------|------|
-| POST /api/auth/login | 登录 |
-| GET /api/admin/statistics | 管理员统计 |
-| GET /api/admin/users | 用户列表 |
-| GET /api/teacher/tasks | 任务列表 |
-| GET /api/teacher/submissions | 作业提交列表 |
-| PUT /api/teacher/submissions/:id | 批改作业 |
-| GET /api/teacher/score-records | 加分审核列表 |
-| GET /api/student/tasks | 学生任务 |
-| POST /api/student/tasks/:id/submit | 提交作业 |
-| GET /api/student/assessment | 我的综测分数 |
-| GET /api/student/score-records | 我的加分明细 |
-| GET /api/student/forum/posts | 论坛帖子 |
-| GET /api/student/jobs | 招聘信息 |
-| GET /api/social/me/status | 我的24小时状态 |
-| GET /api/social/users/:id/profile | 用户公开主页 |
+- `init.sql`：基础表结构和初始数据。
+- `migrate.js`：统一迁移入口。
+- `migrate_social.js`：社交、好友、聊天和状态相关结构。
+- `migrate_forum.js`：论坛相关结构。
+- `migrate_words.js`：每日背单词数据。
+- `migrate_score_records.js`：综测加分记录。
+- `migrate_ai.js`：AI 设置和用量。
+- `migrate_colleges.js`：学院专业数据。
+- `migrate_games.js`：游戏相关数据。
+- `migrate_youth_creation.js`：青年共创数据。
 
-## 配置文件说明
+## 开发注意事项
 
-### 后端配置（backend/.env）
-首次使用请复制 `.env.example` 为 `.env`，按需修改以下配置：
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| DB_HOST | localhost | MySQL 主机地址 |
-| DB_USER | root | MySQL 用户名 |
-| DB_PASSWORD | 123456 | MySQL 密码 |
-| DB_NAME | smart_campus | 数据库名（自动创建） |
-| PORT | 3000 | 后端服务端口 |
-| JWT_SECRET | smart-campus-secret-key-2024 | JWT 签名密钥 |
-
-### vite.config.js
-- 开发服务器端口：5173
-- 代理：`/api` 和 `/uploads` 代理到 `http://localhost:3000`
-- 路径别名：`@` 指向 `src`
+- 后端启动前请确认 MySQL 服务已启动，且 `.env` 中账号密码正确。
+- 前端请求通过 `frontend/src/api/request.js` 统一注入 token。
+- 路由在 `frontend/src/router/index.js` 中按 `admin`、`teacher`、`student` 角色守卫。
+- 不要提交本地上传文件、日志和构建产物，按需检查 `.gitignore`。
 
 ## 作者
 
-**t个球**
+t个球
 
-AI 联合开发项目 | 智慧校园测试专用版本
+AI 联合开发项目 | 智慧校园测试版本

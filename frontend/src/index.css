@@ -726,6 +726,147 @@ input {
   background: #1c304b !important;
 }
 
+/* Student pages: keep local dark text colors readable on dark surfaces. */
+:root[data-theme="dark"] .el-button.is-disabled:not(.is-link):not(.is-text):not(.is-circle),
+:root[data-theme="dark"] .el-button.is-disabled:hover:not(.is-link):not(.is-text):not(.is-circle),
+:root[data-theme="dark"] .el-button--primary.is-disabled:not(.is-link):not(.is-text):not(.is-circle),
+:root[data-theme="dark"] .el-button--primary.is-disabled:hover:not(.is-link):not(.is-text):not(.is-circle) {
+  color: #8fa3bc !important;
+  border-color: #26364b !important;
+  background: #101827 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] .el-input__inner,
+:root[data-theme="dark"] .el-textarea__inner,
+:root[data-theme="dark"] .el-select__placeholder,
+:root[data-theme="dark"] .el-date-editor .el-range-input {
+  color: #dce8f7 !important;
+}
+
+:root[data-theme="dark"] .el-input__inner::placeholder,
+:root[data-theme="dark"] .el-textarea__inner::placeholder,
+:root[data-theme="dark"] .el-date-editor .el-range-input::placeholder {
+  color: #7f90a8 !important;
+}
+
+:root[data-theme="dark"] .chat-page .sidebar-header,
+:root[data-theme="dark"] .chat-page .conv-name,
+:root[data-theme="dark"] .chat-page .panel-title,
+:root[data-theme="dark"] .chat-page .group-toolbar,
+:root[data-theme="dark"] .chat-page .request-name,
+:root[data-theme="dark"] .chat-page .chat-title {
+  color: #e8f1ff !important;
+}
+
+:root[data-theme="dark"] .chat-page .conv-msg,
+:root[data-theme="dark"] .chat-page .conv-time,
+:root[data-theme="dark"] .chat-page .panel-empty,
+:root[data-theme="dark"] .chat-page .request-time,
+:root[data-theme="dark"] .chat-page .request-name span,
+:root[data-theme="dark"] .chat-page .chat-meta,
+:root[data-theme="dark"] .chat-page .msg-meta,
+:root[data-theme="dark"] .chat-page .msg-name,
+:root[data-theme="dark"] .chat-page .pat-tip,
+:root[data-theme="dark"] .chat-page .no-messages {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .chat-page .contact-search,
+:root[data-theme="dark"] .chat-page .request-panel,
+:root[data-theme="dark"] .chat-page .group-toolbar,
+:root[data-theme="dark"] .chat-page .conv-item.contact-item {
+  border-color: var(--campus-border) !important;
+  background: #101a2a !important;
+}
+
+:root[data-theme="dark"] .assessment-page .score-value {
+  background: linear-gradient(90deg, #7fb0ff 0%, #d8e7ff 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+:root[data-theme="dark"] .assessment-page .score-label,
+:root[data-theme="dark"] .assessment-page .item-label,
+:root[data-theme="dark"] .assessment-page .excellent-name {
+  color: #e8f1ff !important;
+}
+
+:root[data-theme="dark"] .assessment-page .item-percent,
+:root[data-theme="dark"] .assessment-page .excellent-class,
+:root[data-theme="dark"] .assessment-page .rank-num {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .assessment-page .total-highlight,
+:root[data-theme="dark"] .assessment-page .excellent-score {
+  color: #7fb0ff !important;
+}
+
+:root[data-theme="dark"] .leave-page .card-title,
+:root[data-theme="dark"] .attendance-page .attendance-info h4,
+:root[data-theme="dark"] .jobs-page .job-title,
+:root[data-theme="dark"] .dashboard .birthday-head,
+:root[data-theme="dark"] .dashboard .birthday-row,
+:root[data-theme="dark"] .dashboard .notice-dialog-title {
+  color: #e8f1ff !important;
+}
+
+:root[data-theme="dark"] .leave-page .record-date,
+:root[data-theme="dark"] .leave-page .info-row,
+:root[data-theme="dark"] .leave-page .reply-label,
+:root[data-theme="dark"] .leave-page .reply-text,
+:root[data-theme="dark"] .attendance-page .attendance-info p,
+:root[data-theme="dark"] .attendance-page .check-in,
+:root[data-theme="dark"] .attendance-page .remark,
+:root[data-theme="dark"] .jobs-page .company-name,
+:root[data-theme="dark"] .jobs-page .job-desc,
+:root[data-theme="dark"] .jobs-page .contact,
+:root[data-theme="dark"] .dashboard .notice-dialog-time,
+:root[data-theme="dark"] .dashboard .notice-dialog-content {
+  color: #a9b7ca !important;
+}
+
+:root[data-theme="dark"] .leave-page .reply-row,
+:root[data-theme="dark"] .feedback-page .feedback-reply {
+  color: #cbd8e8 !important;
+  border: 1px solid #263b58 !important;
+  background: #14243a !important;
+}
+
+:root[data-theme="dark"] .feedback-page .reply-label {
+  color: #9ec5ff !important;
+}
+
+:root[data-theme="dark"] .feedback-page .reply-content {
+  color: #d6e0ed !important;
+}
+
+:root[data-theme="dark"] .feedback-page .feedback-time,
+:root[data-theme="dark"] .feedback-page .reply-time {
+  color: #9fb0c5 !important;
+}
+
+:root[data-theme="dark"] .dashboard .birthday-settings-button {
+  color: #dce8f7 !important;
+  border-color: #354b67 !important;
+  background: #17263b !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .dashboard .birthday-settings-button:hover,
+:root[data-theme="dark"] .dashboard .birthday-settings-button:focus {
+  color: #fff !important;
+  border-color: #4c6c92 !important;
+  background: #1c304b !important;
+}
+
+:root[data-theme="dark"] .dashboard .birthday-settings-icon {
+  color: #9ec5ff !important;
+  background: #1b3557 !important;
+}
+
 :root[data-theme="dark"] .youth-page .map-card,
 :root[data-theme="dark"] .youth-page .story-card,
 :root[data-theme="dark"] .youth-page .story-item {
